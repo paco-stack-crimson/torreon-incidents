@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>CRUCES MÁS CONFLICTIVOS DE TORREÓN 2018-2025</title>
+    <meta name="viewport" content="width=1260">
+    <link rel="stylesheet" href="css/style.css">
+  </head>
+  <body>
+    <div class="wrap">
+      <main>
+        <div class="header-logo">
+          <a href="[Your Organization's Website URL]">
+            <img src="img/A1_.jpg" alt="Torreón Transparente Logo" width="200">
+          </a>
+        </div>
+        <h1>CRUCES MÁS CONFLICTIVOS DE TORREÓN 2018-2025</h1>
+        <div class="chart-container">
+          <div id="chart"></div>
+          <div id="chart-info">
+            <div class="button-update-container">
+              <button id="incidents" class="button-update button-update-active">Total Incidentes</button>
+              <button id="semaforizado" class="button-update">Semaforizado</button>
+            </div>
+            <div class="intersection-info">
+              <div id="street-view"></div>
+              <div class="stats-container">
+                <div id="intersection-name"></div>
+                <div id="total-incidents"></div>
+                <div id="semaforizado-status"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="text">
+          <h2>Nuestra Misión: Hacer que los Datos de la Ciudad Sean Transparentes</h2>
+          <p>
+            Torreón Transparente es una organización cívica dedicada a hacer que los datos oficiales del gobierno sean accesibles y comprensibles para el público. Creemos que al transformar información compleja en formatos fáciles de digerir, empoderamos a los ciudadanos para que se involucren con la administración de su ciudad y contribuyan a la toma de decisiones informada. Nuestra misión es promover la rendición de cuentas y la transparencia al sacar a la luz datos clave.
+          </p>
+          <p>
+            Esta visualización, **"Cruces Más Conflictivos de Torreón 2018-2025,"** es parte de nuestro esfuerzo continuo por analizar y presentar datos públicos. La información que se presenta aquí ha sido seleccionada a partir de registros oficiales del gobierno de la ciudad, centrándose específicamente en incidentes de tráfico y las características de las principales intersecciones.
+          </p>
+          <p>
+            Al desglosar los datos de incidentes por intersección y año, nuestro objetivo es proporcionar una visión clara de las tendencias de seguridad vial. Esta visualización permite a los usuarios explorar:
+            <ul>
+              <li>**Total de Incidentes**: Un recuento simple de los incidentes de tráfico reportados en cada una de las principales intersecciones.</li>
+              <li>**Semaforizados**: Si una intersección está equipada con un semáforo, lo cual puede ser un factor en el número de incidentes.</li>
+            </ul>
+          </p>
+          <p>
+            Este proyecto es una pequeña pieza de arte de datos que tiene la intención de provocar un debate y proporcionar una nueva perspectiva sobre la movilidad urbana en Torreón. Esperamos que esta herramienta ayude a los residentes, planificadores urbanos y líderes comunitarios a entender dónde se necesitan más mejoras en seguridad.
+          </p>
+          <p>
+            Utilizamos varios métodos para procesar estos datos, incluyendo scripts y aplicaciones de hojas de cálculo, para limpiar y organizar la información. La visualización final fue implementada usando la biblioteca **d3.js**, una poderosa herramienta para crear documentos basados en datos.
+          </p>
+        </div>
+      </main>
+      <footer>
+        by <a href="[Your Name or Your Organization's Website]">Torreón Transparente</a> / <a href="[Your Project's GitHub URL]">Código Fuente</a>
+      </footer>
+    </div>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="js/script.js"></script>
+  </body>
+</html>
