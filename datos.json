@@ -1,0 +1,199 @@
+{
+  "intersections": [
+    {
+      "cruce": "PERIFERICO RAUL LOPEZ SANCHEZ & AV PROLONG. BRAVO OTE",
+      "semaforizado": "No",
+      "incidents": 87,
+      "latitude": 25.5823808,
+      "longitude": -103.4184719,
+      "streetView": "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=25.5823808,-103.4184719"
+    },
+    {
+      "cruce": "NUDO MIXTECO",
+      "semaforizado": "No",
+      "incidents": 62,
+      "latitude": 25.5428443,
+      "longitude": -103.4067861,
+      "streetView": "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=25.5428443,-103.4067861"
+    },
+    {
+      "cruce": "BLVD. TORREON MATAMOROS FTE AL CAMPO MILITAR",
+      "semaforizado": "No",
+      "incidents": 47,
+      "latitude": 25.5352742,
+      "longitude": -103.3509643,
+      "streetView": "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=25.5352742,-103.3509643"
+    },
+    {
+      "cruce": "PERIFERICO RAUL LOPEZ SANCHEZ & BLVD INDEPENDENCIA",
+      "semaforizado": "No",
+      "incidents": 44,
+      "latitude": 25.5810413,
+      "longitude": -103.4005609,
+      "streetView": "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=25.5810413,-103.4005609"
+    },
+    {
+      "cruce": "BLVD. INDEPENDENCIA & CALZ ABASTOS",
+      "semaforizado": "Sí",
+      "incidents": 40,
+      "latitude": 25.571217,
+      "longitude": -103.4202951,
+      "streetView": "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=25.571217,-103.4202951"
+    },
+    {
+      "cruce": "PERIFERICO RAUL LOPEZ SANCHEZ & C TORREON SAN PEDRO",
+      "semaforizado": "No",
+      "incidents": 38,
+      "latitude": 25.7572143,
+      "longitude": -102.9838564,
+      "streetView": "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=25.7572143,-102.9838564"
+    },
+    {
+      "cruce": "PERIFERICO RAUL LOPEZ SANCHEZ & C TORREON SAN PEDRO",
+      "semaforizado": "No",
+      "incidents": 37,
+      "latitude": 25.7572143,
+      "longitude": -102.9838564,
+      "streetView": "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=25.7572143,-102.9838564"
+    },
+    {
+      "cruce": "BLVD. INDEPENDENCIA & CALZ COLON",
+      "semaforizado": "Sí",
+      "incidents": 35,
+      "latitude": 25.5472374,
+      "longitude": -103.448509,
+      "streetView": "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=25.5472374,-103.448509"
+    },
+    {
+      "cruce": "PERIFERICO RAUL LOPEZ SANCHEZ & CARRET. TORREON SAN PEDRO",
+      "semaforizado": "No",
+      "incidents": 34,
+      "latitude": 25.584399,
+      "longitude": -103.406852,
+      "streetView": "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=25.5428443,-103.4067861"
+    },
+    {
+      "cruce": "BLVD. TORREON MATAMOROS & CALZ DIVISIN DEL NORTE",
+      "semaforizado": "Sí",
+      "incidents": 33,
+      "latitude": 25.5350718,
+      "longitude": -103.3938744,
+      "streetView": "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=25.5350718,-103.3938744"
+    },
+    {
+      "cruce": "BLVD. REVOLUCIN & CALZ COLON",
+      "semaforizado": "Sí",
+      "incidents": 32,
+      "latitude": 25.5356929,
+      "longitude": -103.4486079,
+      "streetView": "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=25.5356929,-103.4486079"
+    },
+    {
+      "cruce": "BLVD. REVOLUCIN & CALZ SALTILLO 400",
+      "semaforizado": "Sí",
+      "incidents": 32,
+      "latitude": 25.5353333,
+      "longitude": -103.4056339,
+      "streetView": "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=25.5353333,-103.4056339"
+    },
+    {
+      "cruce": "BLVD. REVOLUCIN & AV IGNACIO COMONFORT",
+      "semaforizado": "Sí",
+      "incidents": 29,
+      "latitude": 25.5848913,
+      "longitude": -103.4174806,
+      "streetView": "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=25.5848913,-103.4174806"
+    },
+    {
+      "cruce": "PERIFERICO RAUL LOPEZ SANCHEZ",
+      "semaforizado": "No",
+      "incidents": 29,
+      "latitude": 25.5823808,
+      "longitude": -103.4184719,
+      "streetView": "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=25.5823808,-103.4184719"
+    },
+    {
+      "cruce": "BLVD. TORREON MATAMOROS & BLVD LIBERTAD",
+      "semaforizado": "Sí",
+      "incidents": 24,
+      "latitude": 25.535104,
+      "longitude": -103.364064,
+      "streetView": "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=25.535104,-103.364064"
+    },
+    {
+      "cruce": "BLVD. INDEPENDENCIA & CALZ CUAUHTEMOC",
+      "semaforizado": "Sí",
+      "incidents": 20,
+      "latitude": 25.5600507,
+      "longitude": -103.4341783,
+      "streetView": "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=25.5600507,-103.4341783"
+    },
+    {
+      "cruce": "PERIFERICO RAUL LOPEZ SANCHEZ & PUENTE SANTA FE",
+      "semaforizado": "No",
+      "incidents": 20,
+      "latitude": 25.5823808,
+      "longitude": -103.4184719,
+      "streetView": "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=25.5823808,-103.4184719"
+    },
+    {
+      "cruce": "BLVD. DIAGONAL REFORMA & AV JUAREZ",
+      "semaforizado": "Sí",
+      "incidents": 19,
+      "latitude": 25.5381068,
+      "longitude": -103.4091699,
+      "streetView": "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=25.5381068,-103.4091699"
+    },
+    {
+      "cruce": "PERIFERICO RAUL LOPEZ SANCHEZ & PUENTE SANTA FE",
+      "semaforizado": "No",
+      "incidents": 19,
+      "latitude": 25.5823808,
+      "longitude": -103.4184719,
+      "streetView": "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=25.5823808,-103.4184719"
+    },
+    {
+      "cruce": "CALZ. ANTONIO DE JUAMBELZ & AV PRESIDENTE CARRANZA",
+      "semaforizado": "Sí",
+      "incidents": 18,
+      "latitude": 25.5361574,
+      "longitude": -103.414074,
+      "streetView": "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=25.5361574,-103.414074"
+    },
+    {
+      "cruce": "PERIFERICO RAUL LOPEZ SANCHEZ & BLVD TORREON MATAMOROS",
+      "semaforizado": "No",
+      "incidents": 17,
+      "latitude": 25.57504,
+      "longitude": -103.4519534,
+      "streetView": "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=25.57504,-103.4519534"
+    },
+    {
+      "cruce": "BLVD. REVOLUCIN & CALZ CUAUHTEMOC",
+      "semaforizado": "Sí",
+      "incidents": 16,
+      "latitude": 25.5357361,
+      "longitude": -103.434341,
+      "streetView": "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=25.5357361,-103.434341"
+    },
+    {
+      "cruce": "PERIFERICO RAUL LOPEZ SANCHEZ SOBRE PUENTE EL CAMPESINO",
+      "semaforizado": "No",
+      "incidents": 16,
+      "latitude": 25.5766427,
+      "longitude": -103.3915139,
+      "streetView": "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=25.5766427,-103.3915139"
+    },
+    {
+      "cruce": "BLVD. REVOLUCIN & CALZ MATIAS ROMAN",
+      "semaforizado": "Sí",
+      "incidents": 15,
+      "latitude": 25.5355878,
+      "longitude": -103.4291411,
+      "streetView": "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=25.5355878,-103.4291411"
+    },
+    {
+      "cruce": "CALZ. SALTILLO 400 & PASEO DE LOS CALVOS",
+      "semaforizado": "Sí",
+      "incidents": 15,
+      "latitude":
