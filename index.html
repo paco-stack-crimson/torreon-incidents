@@ -5,91 +5,127 @@
   <title>Torreón Incidents</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- D3 -->
   <script src="https://d3js.org/d3.v7.min.js"></script>
-
-  <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-  <!-- Leaflet MarkerCluster -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
   <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 
   <style>
-    body { font-family: sans-serif; }
-    #chart { width: 960px; height: 500px; margin: 20px auto; }
-    #map { width: 960px; height: 500px; margin: 20px auto; }
-    .label { fill: #333; }
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    #chart, #map {
+      width: 100%;
+      max-width: 960px;
+    }
+    #chart svg {
+      width: 100%;
+    }
+    #map {
+      height: 400px;
+      margin-top: 20px;
+    }
+    .label {
+      fill: #333;
+    }
+    .bar:hover {
+      fill: steelblue;
+    }
+    .intersection-info {
+      margin: 10px;
+      width: 100%;
+      max-width: 960px;
+    }
   </style>
 </head>
 <body>
   <h1>Torreón Incidents</h1>
   <div id="chart"></div>
+  <div class="intersection-info">
+    <h3 id="intersection-name"></h3>
+    <p id="total-incidents"></p>
+    <p id="semaforizado-status"></p>
+    <div id="street-view"></div>
+  </div>
   <div id="map"></div>
 
   <script>
-    const margin = {top: 20, right: 20, bottom: 200, left: 40};
+    const margin = {top: 20, right: 20, bottom: 120, left: 60};
     const width = 960 - margin.left - margin.right;
-    const height = 500 - margin.top - margin.bottom;
+    const height = 400 - margin.top - margin.bottom;
 
-    const svg = d3.select("#chart")
+    const svgContainer = d3.select("#chart")
       .append("svg")
-      .attr("width", width + margin.left + margin.right)
-      .attr("height", height + margin.top + margin.bottom)
+      .attr("viewBox", `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
+      .attr("preserveAspectRatio", "xMidYMid meet");
+    const svg = svgContainer
       .append("g")
       .attr("transform", `translate(${margin.left},${margin.top})`);
 
     Promise.all([
       d3.csv("https://paco-stack-crimson.github.io/torreon-incidents/incidentes.csv"),
       d3.json("https://paco-stack-crimson.github.io/torreon-incidents/datos.json")
-    ]).then(function(files) {
-
-      const trafficData = files[0];
-      const intersectionsData = files[1].intersections;
-
-      // convert numbers
-      trafficData.forEach(d => {
+    ]).then(([csvData, jsonData]) => {
+      // parse CSV numbers
+      csvData.forEach(d => {
         d.total_incidentes = +d.total_incidentes || 0;
       });
 
-      // merge CSV + JSON by crucero name
-      const mergedData = trafficData.map(d => {
-        const match = intersectionsData.find(i => i.cruce === d.Crucero);
+      // Build lookup
+      const jsonLookup = {};
+      jsonData.intersections.forEach(i => {
+        jsonLookup[i.cruce] = i;
+      });
+
+      // Merge
+      const mergedData = csvData.map(d => {
+        const extra = jsonLookup[d.Crucero] || {};
         return {
-          ...d,
-          latitude: match ? match.latitude : null,
-          longitude: match ? match.longitude : null,
-          semaforizado: match ? match.semaforizado : '',
-          streetView: match ? match.streetView : ''
+          Crucero: d.Crucero,
+          total_incidentes: d.total_incidentes || extra.incidents || 0,
+          semaforizado: extra.semaforizado || "",
+          latitude: extra.latitude || null,
+          longitude: extra.longitude || null,
+          streetView: extra.streetView || ""
         };
       });
 
-      // X axis
+      // Sort by descending incidents (optional)
+      mergedData.sort((a, b) => b.total_incidentes - a.total_incidentes);
+
       const x = d3.scaleBand()
         .domain(mergedData.map(d => d.Crucero))
         .range([0, width])
-        .padding(0.1);
+        .padding(0.2);
 
-      // Y axis
       const y = d3.scaleLinear()
-        .domain([0, d3.max(mergedData, d => d.total_incidentes)])
+        .domain([0, d3.max(mergedData, d => d.total_incidentes) * 1.1])
         .range([height, 0])
         .nice();
 
-      svg.append("g")
+      const xAxis = svg.append("g")
         .attr("transform", `translate(0,${height})`)
-        .call(d3.axisBottom(x))
-        .selectAll("text")
-        .attr("transform", "rotate(-65)")
-        .style("text-anchor", "end");
+        .call(d3.axisBottom(x).tickSizeOuter(0));
+
+      xAxis.selectAll("text")
+        .attr("transform", "rotate(-45)")
+        .attr("dx", "-0.8em")
+        .attr("dy", "0.15em")
+        .style("text-anchor", "end")
+        .style("font-size", "10px");
 
       svg.append("g")
         .call(d3.axisLeft(y));
 
-      // Bars
-      svg.selectAll("rect")
+      svg.selectAll(".bar")
         .data(mergedData)
         .enter()
         .append("rect")
@@ -102,19 +138,18 @@
         .on("mouseover", handleMouseOver)
         .on("mouseout", handleMouseOut);
 
-      // Labels
       svg.selectAll(".label")
         .data(mergedData)
         .enter()
         .append("text")
         .attr("class", "label")
-        .attr("x", d => x(d.Crucero) + x.bandwidth() / 2)
+        .attr("x", d => x(d.Crucero) + x.bandwidth()/2)
         .attr("y", d => y(d.total_incidentes) - 5)
         .attr("text-anchor", "middle")
         .style("font-size", "10px")
         .text(d => d.total_incidentes);
 
-      // Leaflet map
+      // Leaflet with clustering
       const map = L.map('map').setView([25.55, -103.4], 12);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
@@ -126,36 +161,45 @@
 
       mergedData.forEach(d => {
         if (d.latitude && d.longitude) {
-          const m = L.marker([+d.latitude, +d.longitude])
+          const marker = L.marker([d.latitude, d.longitude])
             .bindPopup(`
-              <b>${d.Crucero}</b><br>
-              Total de Incidentes: ${d.total_incidentes}<br>
+              <strong>${d.Crucero}</strong><br>
+              Incidentos: ${d.total_incidentes}<br>
               Semaforizado: ${d.semaforizado}<br>
               ${d.streetView ? `<a href="${d.streetView}" target="_blank">Street View</a>` : ''}
             `);
-          clusterGroup.addLayer(m);
-          markers[d.Crucero] = m;
+          clusterGroup.addLayer(marker);
+          markers[d.Crucero] = marker;
         }
       });
 
       map.addLayer(clusterGroup);
 
-      // Hover functions
       function handleMouseOver(event, d) {
-        if (markers[d.Crucero]) {
-          map.setView(markers[d.Crucero].getLatLng(), 15);
-          markers[d.Crucero].openPopup();
+        d3.select("#intersection-name").text(d.Crucero);
+        d3.select("#total-incidents").text("Total de Incidentes: " + d.total_incidentes);
+        d3.select("#semaforizado-status").text("Semaforizado: " + d.semaforizado);
+        if (d.streetView) {
+          d3.select("#street-view").html(
+            `<iframe src="${d.streetView}" width="100%" height="250" style="border:0;" allowfullscreen></iframe>`
+          );
+        }
+        const m = markers[d.Crucero];
+        if (m) {
+          map.flyTo(m.getLatLng(), 14, {duration: 0.8});
+          m.openPopup();
         }
       }
 
       function handleMouseOut(event, d) {
-        if (markers[d.Crucero]) {
-          markers[d.Crucero].closePopup();
+        const m = markers[d.Crucero];
+        if (m) {
+          m.closePopup();
         }
       }
 
-    }).catch(function(error) {
-      console.error("Error loading one or both data files:", error);
+    }).catch(err => {
+      console.error("Error:", err);
     });
   </script>
 </body>
