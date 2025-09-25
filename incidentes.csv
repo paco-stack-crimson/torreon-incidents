@@ -1,5 +1,5 @@
-Crucero,SEMAFORIZADOS,TOTAL DE INCIDENTES,LATITUDE,LONGITUDE,STREET VIEW URL
-PERIFERICO RAUL LOPEZ SANCHEZ & AV PROLONG. BRAVO OTE,No,87,25.5823808,-103.4184719,"https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=25.5823808,-103.4184719"
+Crucero,semaforizado,total_incidentes,LATITUDE,LONGITUDE,street_view
+PERIFERICO RAUL LOPEZ SANCHEZ & AV PROLONG. BRAVO OTE,no,87,25.5823808,-103.4184719,"https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=25.5823808,-103.4184719"
 NUDO MIXTECO,No,62,25.5428443,-103.4067861,"https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=25.5428443,-103.4067861"
 BLVD. TORREON MATAMOROS FTE AL CAMPO MILITAR,No,47,25.5352742,-103.3509643,"https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=25.5352742,-103.3509643"
 PERIFERICO RAUL LOPEZ SANCHEZ & BLVD INDEPENDENCIA,No,44,25.5810413,-103.4005609,"https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=25.5810413,-103.4005609"
