@@ -196,4 +196,185 @@
       "cruce": "CALZ. SALTILLO 400 & PASEO DE LOS CALVOS",
       "semaforizado": "Sí",
       "incidents": 15,
-      "latitude":
+      "latitude": 25.5164589,
+      "longitude": -103.4060902,
+      "streetView": "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=25.5164589,-103.4060902"
+    },
+    {
+      "cruce": "PERIFERICO RAUL LOPEZ SANCHEZ & ANTIGUA CARRETERA A SAN PEDRO",
+      "semaforizado": "No",
+      "incidents": 15,
+      "latitude": 25.5767879,
+      "longitude": -103.3913581,
+      "streetView": "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=25.5767879,-103.3913581"
+    },
+    {
+      "cruce": "PERIFERICO RAUL LOPEZ SANCHEZ SOBRE PUENTE VALLE VERDE",
+      "semaforizado": "No",
+      "incidents": 15,
+      "latitude": 25.5495668,
+      "longitude": -103.3739692,
+      "streetView": "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=25.5495668,-103.3739692"
+    },
+    {
+      "cruce": "PERIFERICO RAUL LOPEZ SANCHEZ SOBRE PUENTE VILLA FLORIDA",
+      "semaforizado": "No",
+      "incidents": 15,
+      "latitude": 25.5851543,
+      "longitude": -103.4128045,
+      "streetView": "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=25.5851543,-103.4128045"
+    },
+    {
+      "cruce": "BLVD. DIAGONAL REFORMA & CALZ ABASTOS",
+      "semaforizado": "Sí",
+      "incidents": 14,
+      "latitude": 25.5517738,
+      "longitude": -103.4261309,
+      "streetView": "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=25.5517738,-103.4261309"
+    },
+    {
+      "cruce": "AV. ALLENDE & AV IGNACIO COMONFORT",
+      "semaforizado": "Sí",
+      "incidents": 13,
+      "latitude": 25.5410489,
+      "longitude": -103.4462843,
+      "streetView": "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=25.5410489,-103.4462843"
+    },
+    {
+      "cruce": "BLVD. REVOLUCIN & C TREVIO",
+      "semaforizado": "Sí",
+      "incidents": 13,
+      "latitude": 25.5357524,
+      "longitude": -103.456961,
+      "streetView": "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=25.5357524,-103.456961"
+    },
+    {
+      "cruce": "PERIFERICO RAUL LOPEZ SANCHEZ SOBRE PUENTE EL CAMPESINO",
+      "semaforizado": "No",
+      "incidents": 13,
+      "latitude": 25.5766427,
+      "longitude": -103.3915139,
+      "streetView": "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=25.5766427,-103.3915139"
+    },
+    {
+      "cruce": "PERIFERICO RAUL LOPEZ SANCHEZ & AV PROLONG. JUAREZ OTE",
+      "semaforizado": "No",
+      "incidents": 13,
+      "latitude": 25.5823808,
+      "longitude": -103.4184719,
+      "streetView": "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=25.5823808,-103.4184719"
+    },
+    {
+      "cruce": "PERIFERICO RAUL LOPEZ SANCHEZ & BLVD EL TAJITO",
+      "semaforizado": "No",
+      "incidents": 13,
+      "latitude": 25.5833362,
+      "longitude": -103.415623,
+      "streetView": "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=25.5833362,-103.415623"
+    },
+    {
+      "cruce": "PERIFERICO RAUL LOPEZ SANCHEZ & C ANTONIO DUEEZ OROZCO",
+      "semaforizado": "No",
+      "incidents": 13,
+      "latitude": 25.5823808,
+      "longitude": -103.4184719,
+      "streetView": "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=25.5823808,-103.4184719"
+    },
+    {
+      "cruce": "PERIFERICO RAUL LOPEZ SANCHEZ & C SANTA FE",
+      "semaforizado": "No",
+      "incidents": 13,
+      "latitude": 25.5823808,
+      "longitude": -103.4184719,
+      "streetView": "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=25.5823808,-103.4184719"
+    },
+    {
+      "cruce": "CALZ. COLON & AV ALLENDE",
+      "semaforizado": "Sí",
+      "incidents": 12,
+      "latitude": 25.5412368,
+      "longitude": -103.448753,
+      "streetView": "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=25.5412368,-103.448753"
+    },
+    {
+      "cruce": "CALZ. COLON & BLVD INDEPENDENCIA",
+      "semaforizado": "Sí",
+      "incidents": 12,
+      "latitude": 25.5472374,
+      "longitude": -103.448509,
+      "streetView": "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=25.5472374,-103.448509"
+    },
+    {
+      "cruce": "PERIFERICO RAUL LOPEZ SANCHEZ & BLVD INDEPENDENCIA",
+      "semaforizado": "No",
+      "incidents": 12,
+      "latitude": 25.5810413,
+      "longitude": -103.4005609,
+      "streetView": "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=25.5810413,-103.4005609"
+    },
+    {
+      "cruce": "PERIFERICO RAUL LOPEZ SANCHEZ FTE A GALERIAS",
+      "semaforizado": "No",
+      "incidents": 12,
+      "latitude": 25.4959173,
+      "longitude": -103.4008397,
+      "streetView": "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=25.4959173,-103.4008397"
+    },
+    {
+      "cruce": "PERIFERICO RAUL LOPEZ SANCHEZ SOBRE PUENTE LOS ALAMOS",
+      "semaforizado": "No",
+      "incidents": 12,
+      "latitude": 25.5823808,
+      "longitude": -103.4184719,
+      "streetView": "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=25.5823808,-103.4184719"
+    },
+    {
+      "cruce": "AV. HIDALGO & AV IGNACIO COMONFORT",
+      "semaforizado": "Sí",
+      "incidents": 11,
+      "latitude": 25.5585754,
+      "longitude": -103.4951585,
+      "streetView": "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=25.5585754,-103.4951585"
+    },
+    {
+      "cruce": "AV. PRESIDENTE CARRANZA & AV EL SIGLO DE TORREON",
+      "semaforizado": "Sí",
+      "incidents": 11,
+      "latitude": 25.5362026,
+      "longitude": -103.4247723,
+      "streetView": "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=25.5362026,-103.4247723"
+    },
+    {
+      "cruce": "BLVD. INDEPENDENCIA & AV ZACATECAS",
+      "semaforizado": "Sí",
+      "incidents": 11,
+      "latitude": 25.5508077,
+      "longitude": -103.4449081,
+      "streetView": "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=25.5508077,-103.4449081"
+    },
+    {
+      "cruce": "CALZ. COLON & AV ESCOBEDO",
+      "semaforizado": "Sí",
+      "incidents": 11,
+      "latitude": 25.5440833,
+      "longitude": -103.4485105,
+      "streetView": "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=25.5440833,-103.4485105"
+    },
+    {
+      "cruce": "CALZ. COLON & AV HIDALGO",
+      "semaforizado": "Sí",
+      "incidents": 11,
+      "latitude": 25.5374142,
+      "longitude": -103.4485585,
+      "streetView": "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=25.5374142,-103.4485585"
+    },
+    {
+      "cruce": "PERIFERICO RAUL LOPEZ SANCHEZ & PROLONG. BRAVO OTE",
+      "semaforizado": "No",
+      "incidents": 11,
+      "latitude": 25.5823808,
+      "longitude": -103.4184719,
+      "streetView": "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=25.5823808,-103.4184719"
+    }
+  ]
+}
