@@ -11,7 +11,7 @@ const svg = d3.select("#chart")
   .append("g")
     .attr("transform", `translate(${margin.left},${margin.top})`);
 
-// Use Promise.all to load both data files at the same time
+// Load data files simultaneously
 Promise.all([
   d3.csv("https://paco-stack-crimson.github.io/torreon-incidents/incidentes.csv"),
   d3.json("https://paco-stack-crimson.github.io/torreon-incidents/datos.json")
@@ -20,23 +20,36 @@ Promise.all([
   const trafficData = files[0];
   const intersectionsData = files[1].intersections;
 
-  // Format the data: convert "TOTAL DE INCIDENTES" to a number
+  // Debug: log first few rows to check data structure
+  console.log("Sample traffic data:", trafficData.slice(0,3));
+
+  // Convert total_incidentes to number and check for validity
   trafficData.forEach(d => {
-    d["TOTAL DE INCIDENTES"] = +d["TOTAL DE INCIDENTES"];
+    if (d.total_incidentes) {
+      d.total_incidentes = +d.total_incidentes;
+      if (isNaN(d.total_incidentes)) {
+        console.warn("Invalid total_incidentes value for entry:", d);
+        d.total_incidentes = 0; // fallback
+      }
+    } else {
+      console.warn("Missing total_incidentes for entry:", d);
+      d.total_incidentes = 0; // fallback
+    }
   });
 
-  // Set up the X axis scale (Intersections)
+  // X axis: scale for intersections (Crucero)
   const x = d3.scaleBand()
     .domain(trafficData.map(d => d.Crucero))
     .range([0, width])
     .padding(0.1);
 
-  // Set up the Y axis scale (Incident Count)
+  // Y axis: scale for total incidents
   const y = d3.scaleLinear()
-    .domain([0, d3.max(trafficData, d => d["TOTAL DE INCIDENTES"])])
-    .range([height, 0]);
+    .domain([0, d3.max(trafficData, d => d.total_incidentes)])
+    .range([height, 0])
+    .nice();
 
-  // Add the X axis to the SVG
+  // Add X axis to SVG and rotate labels for readability
   svg.append("g")
     .attr("transform", `translate(0,${height})`)
     .call(d3.axisBottom(x))
@@ -44,37 +57,37 @@ Promise.all([
       .attr("transform", "rotate(-65)")
       .style("text-anchor", "end");
 
-  // Add the Y axis to the SVG
+  // Add Y axis to SVG
   svg.append("g")
     .call(d3.axisLeft(y));
 
-  // Create the bars for the bar chart
+  // Draw bars
   svg.selectAll("rect")
     .data(trafficData)
     .enter()
     .append("rect")
       .attr("class", "bar")
       .attr("x", d => x(d.Crucero))
-      .attr("y", d => y(d["TOTAL DE INCIDENTES"]))
+      .attr("y", d => y(d.total_incidentes))
       .attr("width", x.bandwidth())
-      .attr("height", d => height - y(d["TOTAL DE INCIDENTES"]))
+      .attr("height", d => height - y(d.total_incidentes))
+      .attr("fill", "#69b3a2")
       .on("mouseover", handleMouseOver)
       .on("mouseout", handleMouseOut);
 
-  // Add labels on top of each bar
+  // Add text labels on top of each bar showing total incidents
   svg.selectAll(".label")
     .data(trafficData)
     .enter()
     .append("text")
       .attr("class", "label")
       .attr("x", d => x(d.Crucero) + x.bandwidth() / 2)
-      .attr("y", d => y(d["TOTAL DE INCIDENTES"]) - 5) // 5 px above bar
+      .attr("y", d => y(d.total_incidentes) - 5)
       .attr("text-anchor", "middle")
-      .text(d => d["TOTAL DE INCIDENTES"])
       .style("font-size", "12px")
-      .style("fill", "#000");
+      .text(d => d.total_incidentes);
 
-  // Event handlers for interactivity
+  // Mouseover event: show intersection info and street view
   function handleMouseOver(event, d) {
     const infoBox = d3.select(".intersection-info");
     const matchingIntersection = intersectionsData.find(i => i.cruce === d.Crucero);
@@ -91,8 +104,9 @@ Promise.all([
     }
   }
 
+  // Mouseout event: clear info box (optional)
   function handleMouseOut(event, d) {
-    // Optional: Clear the info box when not hovering
+    // Uncomment below lines if you want to clear info on mouse out
     // d3.select("#intersection-name").text("");
     // d3.select("#total-incidents").text("");
     // d3.select("#semaforizado-status").text("");
@@ -100,5 +114,5 @@ Promise.all([
   }
 
 }).catch(function(error) {
-  console.log("Error loading one or both data files:", error);
+  console.error("Error loading one or both data files:", error);
 });
