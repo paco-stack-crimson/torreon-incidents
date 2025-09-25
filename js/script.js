@@ -1,5 +1,5 @@
 // Set up the dimensions and margins of the chart
-const margin = {top: 20, right: 20, bottom: 250, left: 40};  // increased bottom margin
+const margin = {top: 20, right: 20, bottom: 200, left: 40};
 const width = 960 - margin.left - margin.right;
 const height = 500 - margin.top - margin.bottom;
 
@@ -20,17 +20,19 @@ Promise.all([
   const trafficData = files[0];
   const intersectionsData = files[1].intersections;
 
-  // Format the data: convert "TOTAL DE INCIDENTES" to a number and check for bad data
+  // Format the data: convert "TOTAL DE INCIDENTES" to a number
   trafficData.forEach(d => {
     d["TOTAL DE INCIDENTES"] = +d["TOTAL DE INCIDENTES"];
-    if (isNaN(d["TOTAL DE INCIDENTES"])) {
-      console.warn("Invalid TOTAL DE INCIDENTES for entry:", d);
-      d["TOTAL DE INCIDENTES"] = 0;  // fallback to 0
-    }
   });
 
-  // Get max value safely
-  const maxIncidents = d3.max(trafficData, d => d["TOTAL DE INCIDENTES"]) || 0;
+  // Debugging: Check for NaN or invalid values after conversion
+  trafficData.forEach(d => {
+    if (isNaN(d["TOTAL DE INCIDENTES"])) {
+      console.warn("Invalid TOTAL DE INCIDENTES detected:", d);
+      d["TOTAL DE INCIDENTES"] = 0; // fallback to 0 to avoid NaN errors
+    }
+  });
+  console.log("Cleaned trafficData:", trafficData);
 
   // Set up the X axis scale (Intersections)
   const x = d3.scaleBand()
@@ -40,34 +42,46 @@ Promise.all([
 
   // Set up the Y axis scale (Incident Count)
   const y = d3.scaleLinear()
-    .domain([0, maxIncidents])
+    .domain([0, d3.max(trafficData, d => d["TOTAL DE INCIDENTES"])])
     .range([height, 0]);
 
-  // Add the X axis to the SVG with improved label rotation and translation
+  // Add the X axis to the SVG
   svg.append("g")
     .attr("transform", `translate(0,${height})`)
     .call(d3.axisBottom(x))
     .selectAll("text")
-      .attr("transform", "translate(-10,10) rotate(-45)")
-      .style("text-anchor", "end")
-      .style("font-size", "12px");
+      .attr("transform", "rotate(-65)")
+      .style("text-anchor", "end");
 
   // Add the Y axis to the SVG
   svg.append("g")
     .call(d3.axisLeft(y));
 
-  // Create the bars for the bar chart with defensive height setting
+  // Create the bars for the bar chart with debugging
   svg.selectAll("rect")
     .data(trafficData)
     .enter()
     .append("rect")
       .attr("class", "bar")
       .attr("x", d => x(d.Crucero))
-      .attr("y", d => y(d["TOTAL DE INCIDENTES"]))
+      .attr("y", d => {
+        const val = d["TOTAL DE INCIDENTES"];
+        const yVal = y(val);
+        if (isNaN(val) || isNaN(yVal)) {
+          console.error(`Invalid value or scale for TOTAL DE INCIDENTES: val=${val}, yVal=${yVal}`, d);
+        }
+        return yVal;
+      })
       .attr("width", x.bandwidth())
       .attr("height", d => {
-        const barHeight = height - y(d["TOTAL DE INCIDENTES"]);
-        return isNaN(barHeight) ? 0 : barHeight;
+        const val = d["TOTAL DE INCIDENTES"];
+        const yVal = y(val);
+        const barHeight = height - yVal;
+        if (isNaN(barHeight)) {
+          console.error(`Invalid barHeight: height=${height}, yVal=${yVal}, barHeight=${barHeight}`, d);
+          return 0;  // Prevent NaN height error
+        }
+        return barHeight;
       })
       .on("mouseover", handleMouseOver)
       .on("mouseout", handleMouseOut);
@@ -81,7 +95,7 @@ Promise.all([
       d3.select("#intersection-name").text(matchingIntersection.cruce);
       d3.select("#total-incidents").text("Total de Incidentes: " + matchingIntersection.incidents);
       d3.select("#semaforizado-status").text("Semaforizado: " + matchingIntersection.semaforizado);
-      
+
       const streetViewUrl = matchingIntersection.streetView;
       if (streetViewUrl) {
         d3.select("#street-view").html(`<img src="${streetViewUrl}" alt="Street View" style="width:100%; height:auto;">`);
