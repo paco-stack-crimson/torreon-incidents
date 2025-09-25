@@ -17,6 +17,8 @@ Promise.all([
   d3.json("datos.json")
 ]).then(function(files) {
 
+  // ... rest of the script
+
   const trafficData = files[0];
   const intersectionsData = files[1].intersections;
 
