@@ -13,8 +13,8 @@ const svg = d3.select("#chart")
 
 // Use Promise.all to load both data files at the same time
 Promise.all([
-  d3.csv("Incidentes.csv"),
-  d3.json("datos.json")
+  d3.csv("/torreon-incidents/Incidentes.csv"),
+  d3.json("/torreon-incidents/datos.json")
 ]).then(function(files) {
 
   const trafficData = files[0];
