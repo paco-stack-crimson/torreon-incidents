@@ -25,15 +25,6 @@ Promise.all([
     d["TOTAL DE INCIDENTES"] = +d["TOTAL DE INCIDENTES"];
   });
 
-  // Debugging: Check for NaN or invalid values after conversion
-  trafficData.forEach(d => {
-    if (isNaN(d["TOTAL DE INCIDENTES"])) {
-      console.warn("Invalid TOTAL DE INCIDENTES detected:", d);
-      d["TOTAL DE INCIDENTES"] = 0; // fallback to 0 to avoid NaN errors
-    }
-  });
-  console.log("Cleaned trafficData:", trafficData);
-
   // Set up the X axis scale (Intersections)
   const x = d3.scaleBand()
     .domain(trafficData.map(d => d.Crucero))
@@ -57,34 +48,31 @@ Promise.all([
   svg.append("g")
     .call(d3.axisLeft(y));
 
-  // Create the bars for the bar chart with debugging
+  // Create the bars for the bar chart
   svg.selectAll("rect")
     .data(trafficData)
     .enter()
     .append("rect")
       .attr("class", "bar")
       .attr("x", d => x(d.Crucero))
-      .attr("y", d => {
-        const val = d["TOTAL DE INCIDENTES"];
-        const yVal = y(val);
-        if (isNaN(val) || isNaN(yVal)) {
-          console.error(`Invalid value or scale for TOTAL DE INCIDENTES: val=${val}, yVal=${yVal}`, d);
-        }
-        return yVal;
-      })
+      .attr("y", d => y(d["TOTAL DE INCIDENTES"]))
       .attr("width", x.bandwidth())
-      .attr("height", d => {
-        const val = d["TOTAL DE INCIDENTES"];
-        const yVal = y(val);
-        const barHeight = height - yVal;
-        if (isNaN(barHeight)) {
-          console.error(`Invalid barHeight: height=${height}, yVal=${yVal}, barHeight=${barHeight}`, d);
-          return 0;  // Prevent NaN height error
-        }
-        return barHeight;
-      })
+      .attr("height", d => height - y(d["TOTAL DE INCIDENTES"]))
       .on("mouseover", handleMouseOver)
       .on("mouseout", handleMouseOut);
+
+  // Add labels on top of each bar
+  svg.selectAll(".label")
+    .data(trafficData)
+    .enter()
+    .append("text")
+      .attr("class", "label")
+      .attr("x", d => x(d.Crucero) + x.bandwidth() / 2)
+      .attr("y", d => y(d["TOTAL DE INCIDENTES"]) - 5) // 5 px above bar
+      .attr("text-anchor", "middle")
+      .text(d => d["TOTAL DE INCIDENTES"])
+      .style("font-size", "12px")
+      .style("fill", "#000");
 
   // Event handlers for interactivity
   function handleMouseOver(event, d) {
@@ -95,7 +83,7 @@ Promise.all([
       d3.select("#intersection-name").text(matchingIntersection.cruce);
       d3.select("#total-incidents").text("Total de Incidentes: " + matchingIntersection.incidents);
       d3.select("#semaforizado-status").text("Semaforizado: " + matchingIntersection.semaforizado);
-
+      
       const streetViewUrl = matchingIntersection.streetView;
       if (streetViewUrl) {
         d3.select("#street-view").html(`<img src="${streetViewUrl}" alt="Street View" style="width:100%; height:auto;">`);
