@@ -1,66 +1,162 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>CRUCES MÁS CONFLICTIVOS DE TORREÓN 2018-2025</title>
-    <meta name="viewport" content="width=1260">
-    <link rel="stylesheet" href="css/style.css">
-  </head>
-  <body>
-    <div class="wrap">
-      <main>
-        <div class="header-logo">
-          <a href="[Your Organization's Website URL]">
-            <img src="img/A1_.jpg" alt="Torreón Transparente Logo" width="200">
-          </a>
-        </div>
-        <h1>CRUCES MÁS CONFLICTIVOS DE TORREÓN 2018-2025</h1>
-        <div class="chart-container">
-          <div id="chart"></div>
-          <div id="chart-info">
-            <div class="button-update-container">
-              <button id="incidents" class="button-update button-update-active">Total Incidentes</button>
-              <button id="semaforizado" class="button-update">Semaforizado</button>
-            </div>
-            <div class="intersection-info">
-              <div id="street-view"></div>
-              <div class="stats-container">
-                <div id="intersection-name"></div>
-                <div id="total-incidents"></div>
-                <div id="semaforizado-status"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div id="text">
-          <h2>Nuestra Misión: Hacer que los Datos de la Ciudad Sean Transparentes</h2>
-          <p>
-            Torreón Transparente es una organización cívica dedicada a hacer que los datos oficiales del gobierno sean accesibles y comprensibles para el público. Creemos que al transformar información compleja en formatos fáciles de digerir, empoderamos a los ciudadanos para que se involucren con la administración de su ciudad y contribuyan a la toma de decisiones informada. Nuestra misión es promover la rendición de cuentas y la transparencia al sacar a la luz datos clave.
-          </p>
-          <p>
-            Esta visualización, **"Cruces Más Conflictivos de Torreón 2018-2025,"** es parte de nuestro esfuerzo continuo por analizar y presentar datos públicos. La información que se presenta aquí ha sido seleccionada a partir de registros oficiales del gobierno de la ciudad, centrándose específicamente en incidentes de tráfico y las características de las principales intersecciones.
-          </p>
-          <p>
-            Al desglosar los datos de incidentes por intersección y año, nuestro objetivo es proporcionar una visión clara de las tendencias de seguridad vial. Esta visualización permite a los usuarios explorar:
-            <ul>
-              <li>**Total de Incidentes**: Un recuento simple de los incidentes de tráfico reportados en cada una de las principales intersecciones.</li>
-              <li>**Semaforizados**: Si una intersección está equipada con un semáforo, lo cual puede ser un factor en el número de incidentes.</li>
-            </ul>
-          </p>
-          <p>
-            Este proyecto es una pequeña pieza de arte de datos que tiene la intención de provocar un debate y proporcionar una nueva perspectiva sobre la movilidad urbana en Torreón. Esperamos que esta herramienta ayude a los residentes, planificadores urbanos y líderes comunitarios a entender dónde se necesitan más mejoras en seguridad.
-          </p>
-          <p>
-            Utilizamos varios métodos para procesar estos datos, incluyendo scripts y aplicaciones de hojas de cálculo, para limpiar y organizar la información. La visualización final fue implementada usando la biblioteca **d3.js**, una poderosa herramienta para crear documentos basados en datos.
-          </p>
-        </div>
-      </main>
-      <footer>
-        by <a href="[Your Name or Your Organization's Website]">Torreón Transparente</a> / <a href="[Your Project's GitHub URL]">Código Fuente</a>
-      </footer>
-    </div>
-    <script src="https://d3js.org/d3.v7.min.js"></script>
-    <script src="js/script.js"></script>
-  </body>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Torreón Incidents</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- D3 -->
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Leaflet MarkerCluster -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+
+  <style>
+    body { font-family: sans-serif; }
+    #chart { width: 960px; height: 500px; margin: 20px auto; }
+    #map { width: 960px; height: 500px; margin: 20px auto; }
+    .label { fill: #333; }
+  </style>
+</head>
+<body>
+  <h1>Torreón Incidents</h1>
+  <div id="chart"></div>
+  <div id="map"></div>
+
+  <script>
+    const margin = {top: 20, right: 20, bottom: 200, left: 40};
+    const width = 960 - margin.left - margin.right;
+    const height = 500 - margin.top - margin.bottom;
+
+    const svg = d3.select("#chart")
+      .append("svg")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+      .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    Promise.all([
+      d3.csv("https://paco-stack-crimson.github.io/torreon-incidents/incidentes.csv"),
+      d3.json("https://paco-stack-crimson.github.io/torreon-incidents/datos.json")
+    ]).then(function(files) {
+
+      const trafficData = files[0];
+      const intersectionsData = files[1].intersections;
+
+      // convert numbers
+      trafficData.forEach(d => {
+        d.total_incidentes = +d.total_incidentes || 0;
+      });
+
+      // merge CSV + JSON by crucero name
+      const mergedData = trafficData.map(d => {
+        const match = intersectionsData.find(i => i.cruce === d.Crucero);
+        return {
+          ...d,
+          latitude: match ? match.latitude : null,
+          longitude: match ? match.longitude : null,
+          semaforizado: match ? match.semaforizado : '',
+          streetView: match ? match.streetView : ''
+        };
+      });
+
+      // X axis
+      const x = d3.scaleBand()
+        .domain(mergedData.map(d => d.Crucero))
+        .range([0, width])
+        .padding(0.1);
+
+      // Y axis
+      const y = d3.scaleLinear()
+        .domain([0, d3.max(mergedData, d => d.total_incidentes)])
+        .range([height, 0])
+        .nice();
+
+      svg.append("g")
+        .attr("transform", `translate(0,${height})`)
+        .call(d3.axisBottom(x))
+        .selectAll("text")
+        .attr("transform", "rotate(-65)")
+        .style("text-anchor", "end");
+
+      svg.append("g")
+        .call(d3.axisLeft(y));
+
+      // Bars
+      svg.selectAll("rect")
+        .data(mergedData)
+        .enter()
+        .append("rect")
+        .attr("class", "bar")
+        .attr("x", d => x(d.Crucero))
+        .attr("y", d => y(d.total_incidentes))
+        .attr("width", x.bandwidth())
+        .attr("height", d => height - y(d.total_incidentes))
+        .attr("fill", "#69b3a2")
+        .on("mouseover", handleMouseOver)
+        .on("mouseout", handleMouseOut);
+
+      // Labels
+      svg.selectAll(".label")
+        .data(mergedData)
+        .enter()
+        .append("text")
+        .attr("class", "label")
+        .attr("x", d => x(d.Crucero) + x.bandwidth() / 2)
+        .attr("y", d => y(d.total_incidentes) - 5)
+        .attr("text-anchor", "middle")
+        .style("font-size", "10px")
+        .text(d => d.total_incidentes);
+
+      // Leaflet map
+      const map = L.map('map').setView([25.55, -103.4], 12);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(map);
+
+      const clusterGroup = L.markerClusterGroup();
+      const markers = {};
+
+      mergedData.forEach(d => {
+        if (d.latitude && d.longitude) {
+          const m = L.marker([+d.latitude, +d.longitude])
+            .bindPopup(`
+              <b>${d.Crucero}</b><br>
+              Total de Incidentes: ${d.total_incidentes}<br>
+              Semaforizado: ${d.semaforizado}<br>
+              ${d.streetView ? `<a href="${d.streetView}" target="_blank">Street View</a>` : ''}
+            `);
+          clusterGroup.addLayer(m);
+          markers[d.Crucero] = m;
+        }
+      });
+
+      map.addLayer(clusterGroup);
+
+      // Hover functions
+      function handleMouseOver(event, d) {
+        if (markers[d.Crucero]) {
+          map.setView(markers[d.Crucero].getLatLng(), 15);
+          markers[d.Crucero].openPopup();
+        }
+      }
+
+      function handleMouseOut(event, d) {
+        if (markers[d.Crucero]) {
+          markers[d.Crucero].closePopup();
+        }
+      }
+
+    }).catch(function(error) {
+      console.error("Error loading one or both data files:", error);
+    });
+  </script>
+</body>
 </html>
