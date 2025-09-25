@@ -5,10 +5,14 @@
   <title>Torreón Incidents</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+  <!-- D3.js -->
   <script src="https://d3js.org/d3.v7.min.js"></script>
+
+  <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
+  <!-- Leaflet MarkerCluster -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
   <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
@@ -22,39 +26,27 @@
       flex-direction: column;
       align-items: center;
     }
-    #chart, #map {
-      width: 100%;
-      max-width: 960px;
-    }
-    #chart svg {
-      width: 100%;
-    }
-    #map {
-      height: 400px;
-      margin-top: 20px;
-    }
-    .label {
-      fill: #333;
-    }
-    .bar:hover {
-      fill: steelblue;
-    }
-    .intersection-info {
-      margin: 10px;
-      width: 100%;
-      max-width: 960px;
-    }
+    h1 { margin: 20px 0; }
+    #chart, #map { width: 100%; max-width: 960px; }
+    #chart svg { width: 100%; }
+    #map { height: 400px; margin-top: 20px; }
+    .bar:hover { fill: steelblue; cursor: pointer; }
+    .label { fill: #333; font-size: 10px; }
+    .intersection-info { margin: 10px; width: 100%; max-width: 960px; }
+    #street-view iframe { width: 100%; height: 250px; border: 0; }
   </style>
 </head>
 <body>
   <h1>Torreón Incidents</h1>
   <div id="chart"></div>
+
   <div class="intersection-info">
     <h3 id="intersection-name"></h3>
     <p id="total-incidents"></p>
     <p id="semaforizado-status"></p>
     <div id="street-view"></div>
   </div>
+
   <div id="map"></div>
 
   <script>
@@ -66,26 +58,19 @@
       .append("svg")
       .attr("viewBox", `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
       .attr("preserveAspectRatio", "xMidYMid meet");
-    const svg = svgContainer
-      .append("g")
+
+    const svg = svgContainer.append("g")
       .attr("transform", `translate(${margin.left},${margin.top})`);
 
     Promise.all([
       d3.csv("https://paco-stack-crimson.github.io/torreon-incidents/incidentes.csv"),
       d3.json("https://paco-stack-crimson.github.io/torreon-incidents/datos.json")
     ]).then(([csvData, jsonData]) => {
-      // parse CSV numbers
-      csvData.forEach(d => {
-        d.total_incidentes = +d.total_incidentes || 0;
-      });
+      csvData.forEach(d => { d.total_incidentes = +d.total_incidentes || 0; });
 
-      // Build lookup
       const jsonLookup = {};
-      jsonData.intersections.forEach(i => {
-        jsonLookup[i.cruce] = i;
-      });
+      jsonData.intersections.forEach(i => jsonLookup[i.cruce] = i);
 
-      // Merge
       const mergedData = csvData.map(d => {
         const extra = jsonLookup[d.Crucero] || {};
         return {
@@ -98,7 +83,6 @@
         };
       });
 
-      // Sort by descending incidents (optional)
       mergedData.sort((a, b) => b.total_incidentes - a.total_incidentes);
 
       const x = d3.scaleBand()
@@ -125,6 +109,7 @@
       svg.append("g")
         .call(d3.axisLeft(y));
 
+      // Draw bars
       svg.selectAll(".bar")
         .data(mergedData)
         .enter()
@@ -138,6 +123,7 @@
         .on("mouseover", handleMouseOver)
         .on("mouseout", handleMouseOut);
 
+      // Add labels
       svg.selectAll(".label")
         .data(mergedData)
         .enter()
@@ -146,10 +132,9 @@
         .attr("x", d => x(d.Crucero) + x.bandwidth()/2)
         .attr("y", d => y(d.total_incidentes) - 5)
         .attr("text-anchor", "middle")
-        .style("font-size", "10px")
         .text(d => d.total_incidentes);
 
-      // Leaflet with clustering
+      // Initialize Leaflet map
       const map = L.map('map').setView([25.55, -103.4], 12);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
@@ -172,7 +157,6 @@
           markers[d.Crucero] = marker;
         }
       });
-
       map.addLayer(clusterGroup);
 
       function handleMouseOver(event, d) {
@@ -181,7 +165,7 @@
         d3.select("#semaforizado-status").text("Semaforizado: " + d.semaforizado);
         if (d.streetView) {
           d3.select("#street-view").html(
-            `<iframe src="${d.streetView}" width="100%" height="250" style="border:0;" allowfullscreen></iframe>`
+            `<iframe src="${d.streetView}" allowfullscreen></iframe>`
           );
         }
         const m = markers[d.Crucero];
@@ -193,14 +177,10 @@
 
       function handleMouseOut(event, d) {
         const m = markers[d.Crucero];
-        if (m) {
-          m.closePopup();
-        }
+        if (m) m.closePopup();
       }
 
-    }).catch(err => {
-      console.error("Error:", err);
-    });
+    }).catch(err => console.error("Error loading data:", err));
   </script>
 </body>
 </html>
