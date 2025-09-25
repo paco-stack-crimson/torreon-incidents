@@ -20,10 +20,17 @@ Promise.all([
   const trafficData = files[0];
   const intersectionsData = files[1].intersections;
 
-  // Format the data: convert "TOTAL DE INCIDENTES" to a number
+  // Format the data: convert "TOTAL DE INCIDENTES" to a number and check for bad data
   trafficData.forEach(d => {
     d["TOTAL DE INCIDENTES"] = +d["TOTAL DE INCIDENTES"];
+    if (isNaN(d["TOTAL DE INCIDENTES"])) {
+      console.warn("Invalid TOTAL DE INCIDENTES for entry:", d);
+      d["TOTAL DE INCIDENTES"] = 0;  // fallback to 0
+    }
   });
+
+  // Get max value safely
+  const maxIncidents = d3.max(trafficData, d => d["TOTAL DE INCIDENTES"]) || 0;
 
   // Set up the X axis scale (Intersections)
   const x = d3.scaleBand()
@@ -33,7 +40,7 @@ Promise.all([
 
   // Set up the Y axis scale (Incident Count)
   const y = d3.scaleLinear()
-    .domain([0, d3.max(trafficData, d => d["TOTAL DE INCIDENTES"])])
+    .domain([0, maxIncidents])
     .range([height, 0]);
 
   // Add the X axis to the SVG with improved label rotation and translation
@@ -49,7 +56,7 @@ Promise.all([
   svg.append("g")
     .call(d3.axisLeft(y));
 
-  // Create the bars for the bar chart
+  // Create the bars for the bar chart with defensive height setting
   svg.selectAll("rect")
     .data(trafficData)
     .enter()
@@ -58,7 +65,10 @@ Promise.all([
       .attr("x", d => x(d.Crucero))
       .attr("y", d => y(d["TOTAL DE INCIDENTES"]))
       .attr("width", x.bandwidth())
-      .attr("height", d => height - y(d["TOTAL DE INCIDENTES"]))
+      .attr("height", d => {
+        const barHeight = height - y(d["TOTAL DE INCIDENTES"]);
+        return isNaN(barHeight) ? 0 : barHeight;
+      })
       .on("mouseover", handleMouseOver)
       .on("mouseout", handleMouseOut);
 
