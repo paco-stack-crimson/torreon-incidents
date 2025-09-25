@@ -1,9 +1,7 @@
-// Set up the dimensions and margins of the chart
 const margin = {top: 20, right: 20, bottom: 200, left: 40};
 const width = 960 - margin.left - margin.right;
 const height = 500 - margin.top - margin.bottom;
 
-// Append the SVG object to the #chart div in your HTML
 const svg = d3.select("#chart")
   .append("svg")
     .attr("width", width + margin.left + margin.right)
@@ -11,45 +9,46 @@ const svg = d3.select("#chart")
   .append("g")
     .attr("transform", `translate(${margin.left},${margin.top})`);
 
-// Load data files simultaneously
 Promise.all([
   d3.csv("https://paco-stack-crimson.github.io/torreon-incidents/incidentes.csv"),
   d3.json("https://paco-stack-crimson.github.io/torreon-incidents/datos.json")
 ]).then(function(files) {
 
-  const trafficData = files[0];
-  const intersectionsData = files[1].intersections;
+  const csvData = files[0];
+  const jsonData = files[1].intersections;
 
-  // Debug: log first few rows to check data structure
-  console.log("Sample traffic data:", trafficData.slice(0,3));
-
-  // Convert total_incidentes to number and check for validity
-  trafficData.forEach(d => {
-    if (d.total_incidentes) {
-      d.total_incidentes = +d.total_incidentes;
-      if (isNaN(d.total_incidentes)) {
-        console.warn("Invalid total_incidentes value for entry:", d);
-        d.total_incidentes = 0; // fallback
-      }
-    } else {
-      console.warn("Missing total_incidentes for entry:", d);
-      d.total_incidentes = 0; // fallback
-    }
+  // Build lookup from JSON by cruce string
+  const jsonLookup = {};
+  jsonData.forEach(i => {
+    jsonLookup[i.cruce] = i;
   });
 
-  // X axis: scale for intersections (Crucero)
+  // Merge CSV + JSON rows
+  const mergedData = csvData.map(d => {
+    d.total_incidentes = +d.total_incidentes || 0;
+    const extra = jsonLookup[d.Crucero] || {};
+    return {
+      Crucero: d.Crucero,
+      total_incidentes: d.total_incidentes || extra.incidents || 0,
+      semaforizado: extra.semaforizado || "",
+      latitude: extra.latitude || null,
+      longitude: extra.longitude || null,
+      streetView: extra.streetView || ""
+    };
+  });
+
+  // D3 X axis
   const x = d3.scaleBand()
-    .domain(trafficData.map(d => d.Crucero))
+    .domain(mergedData.map(d => d.Crucero))
     .range([0, width])
     .padding(0.1);
 
-  // Y axis: scale for total incidents
+  // D3 Y axis
   const y = d3.scaleLinear()
-    .domain([0, d3.max(trafficData, d => d.total_incidentes)])
+    .domain([0, d3.max(mergedData, d => d.total_incidentes)])
     .range([height, 0])
     .nice();
 
-  // Add X axis to SVG and rotate labels for readability
   svg.append("g")
     .attr("transform", `translate(0,${height})`)
     .call(d3.axisBottom(x))
@@ -57,13 +56,11 @@ Promise.all([
       .attr("transform", "rotate(-65)")
       .style("text-anchor", "end");
 
-  // Add Y axis to SVG
-  svg.append("g")
-    .call(d3.axisLeft(y));
+  svg.append("g").call(d3.axisLeft(y));
 
-  // Draw bars
+  // Bars
   svg.selectAll("rect")
-    .data(trafficData)
+    .data(mergedData)
     .enter()
     .append("rect")
       .attr("class", "bar")
@@ -75,9 +72,9 @@ Promise.all([
       .on("mouseover", handleMouseOver)
       .on("mouseout", handleMouseOut);
 
-  // Add text labels on top of each bar showing total incidents
+  // Labels
   svg.selectAll(".label")
-    .data(trafficData)
+    .data(mergedData)
     .enter()
     .append("text")
       .attr("class", "label")
@@ -87,30 +84,48 @@ Promise.all([
       .style("font-size", "12px")
       .text(d => d.total_incidentes);
 
-  // Mouseover event: show intersection info and street view
-  function handleMouseOver(event, d) {
-    const infoBox = d3.select(".intersection-info");
-    const matchingIntersection = intersectionsData.find(i => i.cruce === d.Crucero);
+  // Leaflet map
+  const map = L.map('map').setView([25.55, -103.4], 12);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
 
-    if (matchingIntersection) {
-      d3.select("#intersection-name").text(matchingIntersection.cruce);
-      d3.select("#total-incidents").text("Total de Incidentes: " + matchingIntersection.incidents);
-      d3.select("#semaforizado-status").text("Semaforizado: " + matchingIntersection.semaforizado);
-      
-      const streetViewUrl = matchingIntersection.streetView;
-      if (streetViewUrl) {
-        d3.select("#street-view").html(`<img src="${streetViewUrl}" alt="Street View" style="width:100%; height:auto;">`);
-      }
+  // Markers + keep references
+  const markers = {};
+  mergedData.forEach(d => {
+    if (d.latitude && d.longitude) {
+      markers[d.Crucero] = L.marker([+d.latitude, +d.longitude])
+        .addTo(map)
+        .bindPopup(`
+          <b>${d.Crucero}</b><br>
+          Total de Incidentes: ${d.total_incidentes}<br>
+          Semaforizado: ${d.semaforizado}<br>
+          ${d.streetView ? `<a href="${d.streetView}" target="_blank">Street View</a>` : ''}
+        `);
+    }
+  });
+
+  // Hover handlers
+  function handleMouseOver(event, d) {
+    d3.select("#intersection-name").text(d.Crucero);
+    d3.select("#total-incidents").text("Total de Incidentes: " + d.total_incidentes);
+    d3.select("#semaforizado-status").text("Semaforizado: " + d.semaforizado);
+
+    if (d.streetView) {
+      d3.select("#street-view").html(
+        `<iframe src="${d.streetView}" width="100%" height="300" style="border:0;" allowfullscreen></iframe>`
+      );
+    }
+
+    if (markers[d.Crucero]) {
+      markers[d.Crucero].openPopup();
+      map.setView([+d.latitude, +d.longitude], 14);
     }
   }
 
-  // Mouseout event: clear info box (optional)
   function handleMouseOut(event, d) {
-    // Uncomment below lines if you want to clear info on mouse out
-    // d3.select("#intersection-name").text("");
-    // d3.select("#total-incidents").text("");
-    // d3.select("#semaforizado-status").text("");
-    // d3.select("#street-view").html("");
+    // optional clear
   }
 
 }).catch(function(error) {
