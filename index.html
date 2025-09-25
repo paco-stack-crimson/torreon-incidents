@@ -18,14 +18,7 @@
   <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 
   <style>
-    body {
-      font-family: sans-serif;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
+    body { font-family: sans-serif; margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; }
     h1 { margin: 20px 0; }
     #chart, #map { width: 100%; max-width: 960px; }
     #chart svg { width: 100%; }
@@ -62,10 +55,13 @@
     const svg = svgContainer.append("g")
       .attr("transform", `translate(${margin.left},${margin.top})`);
 
+    const GOOGLE_API_KEY = "YOUR_API_KEY"; // <-- Replace with your API key
+
     Promise.all([
       d3.csv("https://paco-stack-crimson.github.io/torreon-incidents/incidentes.csv"),
       d3.json("https://paco-stack-crimson.github.io/torreon-incidents/datos.json")
     ]).then(([csvData, jsonData]) => {
+
       csvData.forEach(d => { d.total_incidentes = +d.total_incidentes || 0; });
 
       const jsonLookup = {};
@@ -78,8 +74,7 @@
           total_incidentes: d.total_incidentes || extra.incidents || 0,
           semaforizado: extra.semaforizado || "",
           latitude: extra.latitude || null,
-          longitude: extra.longitude || null,
-          streetView: extra.streetView || ""
+          longitude: extra.longitude || null
         };
       });
 
@@ -106,8 +101,7 @@
         .style("text-anchor", "end")
         .style("font-size", "10px");
 
-      svg.append("g")
-        .call(d3.axisLeft(y));
+      svg.append("g").call(d3.axisLeft(y));
 
       // Draw bars
       svg.selectAll(".bar")
@@ -134,12 +128,9 @@
         .attr("text-anchor", "middle")
         .text(d => d.total_incidentes);
 
-      // Initialize Leaflet map
+      // Leaflet map
       const map = L.map('map').setView([25.55, -103.4], 12);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '&copy; OpenStreetMap contributors'
-      }).addTo(map);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
 
       const clusterGroup = L.markerClusterGroup();
       const markers = {};
@@ -150,8 +141,7 @@
             .bindPopup(`
               <strong>${d.Crucero}</strong><br>
               Incidentos: ${d.total_incidentes}<br>
-              Semaforizado: ${d.semaforizado}<br>
-              ${d.streetView ? `<a href="${d.streetView}" target="_blank">Street View</a>` : ''}
+              Semaforizado: ${d.semaforizado}
             `);
           clusterGroup.addLayer(marker);
           markers[d.Crucero] = marker;
@@ -163,11 +153,12 @@
         d3.select("#intersection-name").text(d.Crucero);
         d3.select("#total-incidents").text("Total de Incidentes: " + d.total_incidentes);
         d3.select("#semaforizado-status").text("Semaforizado: " + d.semaforizado);
-        if (d.streetView) {
-          d3.select("#street-view").html(
-            `<iframe src="${d.streetView}" allowfullscreen></iframe>`
-          );
+
+        if (d.latitude && d.longitude) {
+          const streetViewUrl = `https://www.google.com/maps/embed/v1/streetview?key=${GOOGLE_API_KEY}&location=${d.latitude},${d.longitude}&heading=210&pitch=10&fov=80`;
+          d3.select("#street-view").html(`<iframe src="${streetViewUrl}" allowfullscreen></iframe>`);
         }
+
         const m = markers[d.Crucero];
         if (m) {
           map.flyTo(m.getLatLng(), 14, {duration: 0.8});
