@@ -1,5 +1,5 @@
 // Set up the dimensions and margins of the chart
-const margin = {top: 20, right: 20, bottom: 200, left: 40};
+const margin = {top: 20, right: 20, bottom: 250, left: 40};  // increased bottom margin
 const width = 960 - margin.left - margin.right;
 const height = 500 - margin.top - margin.bottom;
 
@@ -36,13 +36,14 @@ Promise.all([
     .domain([0, d3.max(trafficData, d => d["TOTAL DE INCIDENTES"])])
     .range([height, 0]);
 
-  // Add the X axis to the SVG
+  // Add the X axis to the SVG with improved label rotation and translation
   svg.append("g")
     .attr("transform", `translate(0,${height})`)
     .call(d3.axisBottom(x))
     .selectAll("text")
-      .attr("transform", "rotate(-65)")
-      .style("text-anchor", "end");
+      .attr("transform", "translate(-10,10) rotate(-45)")
+      .style("text-anchor", "end")
+      .style("font-size", "12px");
 
   // Add the Y axis to the SVG
   svg.append("g")
