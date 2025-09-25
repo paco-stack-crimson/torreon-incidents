@@ -11,9 +11,10 @@ const svg = d3.select("#chart")
   .append("g")
     .attr("transform", `translate(${margin.left},${margin.top})`);
 
-// Use Promise.all to load both data files
+// Load CSV and JSON using Promise.all
 Promise.all([
-  d3.csv("Incidentes.csv", d => {
+  // ✅ NOTE: lowercase filename to match your GitHub repo
+  d3.csv("incidentes.csv", d => {
     return {
       crucero: d["Crucero"].trim(),
       semaforizado: d["SEMAFORIZADOS"].trim(),
@@ -23,12 +24,12 @@ Promise.all([
       street_view: d["STREET VIEW URL"]
     };
   }),
-  d3.json("datos.json")
+  d3.json("datos.json") // Make sure this path is correct too
 ]).then(function([trafficData, jsonData]) {
 
   const intersectionsData = jsonData.intersections;
 
-  // Aggregate data by crucero (in case of duplicates)
+  // Aggregate data by 'crucero' (in case there are duplicates)
   const aggregatedData = Array.from(
     d3.rollup(
       trafficData,
@@ -53,7 +54,7 @@ Promise.all([
     .domain([0, d3.max(aggregatedData, d => d.total_incidentes)])
     .range([height, 0]);
 
-  // X Axis
+  // Add X axis
   svg.append("g")
     .attr("transform", `translate(0,${height})`)
     .call(d3.axisBottom(x))
@@ -61,11 +62,11 @@ Promise.all([
       .attr("transform", "rotate(-65)")
       .style("text-anchor", "end");
 
-  // Y Axis
+  // Add Y axis
   svg.append("g")
     .call(d3.axisLeft(y));
 
-  // Bars
+  // Add bars
   svg.selectAll("rect.bar")
     .data(aggregatedData)
     .enter()
@@ -78,10 +79,11 @@ Promise.all([
       .on("mouseover", handleMouseOver)
       .on("mouseout", handleMouseOut);
 
-  // Event handlers for interactivity
+  // Interactivity: Mouseover
   function handleMouseOver(event, d) {
     const infoBox = d3.select(".intersection-info");
 
+    // Match intersection from JSON
     const matchingIntersection = intersectionsData.find(i =>
       i.cruce.trim().toLowerCase() === d.crucero.trim().toLowerCase()
     );
@@ -98,8 +100,9 @@ Promise.all([
     }
   }
 
+  // Interactivity: Mouseout
   function handleMouseOut(event, d) {
-    // Optional: Clear the info box
+    // Optional: clear the info box when the mouse leaves the bar
     // d3.select("#intersection-name").text("");
     // d3.select("#total-incidents").text("");
     // d3.select("#semaforizado-status").text("");
@@ -109,4 +112,3 @@ Promise.all([
 }).catch(function(error) {
   console.error("Error loading one or both data files:", error);
 });
-
