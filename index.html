@@ -19,7 +19,7 @@
   }
 
   #chart-container {
-    width: 95%;
+    width: 100%;
     max-width: 1200px;
     margin: 0 auto;
     overflow-x: auto;
@@ -81,89 +81,105 @@
 const API_KEY = "YOUR_API_KEY"; // <-- Insert your valid Google Maps API key here
 
 const container = document.getElementById('chart-container');
-const margin = { top: 20, right: 20, bottom: 150, left: 60 };
-let width = Math.max(container.clientWidth, 2000) - margin.left - margin.right; // virtual width
-let height = 450 - margin.top - margin.bottom;
+const margin = { top: 20, right: 20, bottom: 180, left: 60 };
+let width, height;
 
-const svg = d3.select("#chart")
-  .append("svg")
-  .attr("width", width + margin.left + margin.right)
-  .attr("height", height + margin.top + margin.bottom)
-  .append("g")
-  .attr("transform", `translate(${margin.left},${margin.top})`);
+function renderChart() {
+  // Remove previous SVG if exists
+  d3.select("#chart").selectAll("*").remove();
 
-Promise.all([
-  d3.csv("https://paco-stack-crimson.github.io/torreon-incidents/incidentes.csv"),
-  d3.json("https://paco-stack-crimson.github.io/torreon-incidents/datos.json")
-]).then(function(files) {
-  const trafficData = files[0];
-  const intersectionsData = files[1].intersections;
+  width = Math.max(container.clientWidth, 1500) - margin.left - margin.right; // ensure wide enough
+  height = 450 - margin.top - margin.bottom;
 
-  trafficData.forEach(d => d.total_incidentes = +d.total_incidentes || 0);
+  const svg = d3.select("#chart")
+    .append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform", `translate(${margin.left},${margin.top})`);
 
-  const x = d3.scaleBand()
-    .domain(trafficData.map(d => d.Crucero))
-    .range([0, width])
-    .padding(0.2);
+  Promise.all([
+    d3.csv("https://paco-stack-crimson.github.io/torreon-incidents/incidentes.csv"),
+    d3.json("https://paco-stack-crimson.github.io/torreon-incidents/datos.json")
+  ]).then(function(files) {
+    const trafficData = files[0];
+    const intersectionsData = files[1].intersections;
 
-  const y = d3.scaleLinear()
-    .domain([0, d3.max(trafficData, d => d.total_incidentes)]).nice()
-    .range([height, 0]);
+    trafficData.forEach(d => d.total_incidentes = +d.total_incidentes || 0);
 
-  // X axis
-  svg.append("g")
-    .attr("transform", `translate(0,${height})`)
-    .call(d3.axisBottom(x))
-    .selectAll("text")
-      .attr("transform", "rotate(-45)")
-      .style("text-anchor", "end")
-      .style("font-size", "12px");
+    const x = d3.scaleBand()
+      .domain(trafficData.map(d => d.Crucero))
+      .range([0, trafficData.length * 50]) // wider for many bars
+      .padding(0.2);
 
-  // Y axis
-  svg.append("g")
-    .call(d3.axisLeft(y));
+    const y = d3.scaleLinear()
+      .domain([0, d3.max(trafficData, d => d.total_incidentes)]).nice()
+      .range([height, 0]);
 
-  // Bars
-  svg.selectAll(".bar")
-    .data(trafficData)
-    .enter()
-    .append("rect")
-      .attr("class", "bar")
-      .attr("x", d => x(d.Crucero))
-      .attr("y", d => y(d.total_incidentes))
-      .attr("width", x.bandwidth())
-      .attr("height", d => height - y(d.total_incidentes))
-      .on("mouseover", handleMouseOver)
-      .on("mouseout", handleMouseOut);
+    // X axis
+    svg.append("g")
+      .attr("transform", `translate(0,${height})`)
+      .call(d3.axisBottom(x))
+      .selectAll("text")
+        .attr("transform", "rotate(-60)")
+        .style("text-anchor", "end")
+        .style("font-size", "12px");
 
-  // Labels
-  svg.selectAll(".label")
-    .data(trafficData)
-    .enter()
-    .append("text")
-      .attr("class", "label")
-      .attr("x", d => x(d.Crucero) + x.bandwidth() / 2)
-      .attr("y", d => y(d.total_incidentes) - 5)
-      .attr("text-anchor", "middle")
-      .text(d => d.total_incidentes);
+    // Y axis
+    svg.append("g")
+      .call(d3.axisLeft(y));
 
-  function handleMouseOver(event, d) {
-    const match = intersectionsData.find(i => i.cruce === d.Crucero);
-    if (match) {
-      d3.select("#intersection-name").text(match.cruce);
-      d3.select("#total-incidents").text("Total Incidents: " + match.incidents);
-      d3.select("#semaforizado-status").text("Semaforizado: " + match.semaforizado);
+    // Bars
+    svg.selectAll(".bar")
+      .data(trafficData)
+      .enter()
+      .append("rect")
+        .attr("class", "bar")
+        .attr("x", d => x(d.Crucero))
+        .attr("y", d => y(d.total_incidentes))
+        .attr("width", x.bandwidth())
+        .attr("height", d => height - y(d.total_incidentes))
+        .on("mouseover", handleMouseOver)
+        .on("mouseout", handleMouseOut);
 
-      const streetViewUrl = `https://maps.googleapis.com/maps/api/streetview?size=600x400&location=${match.latitude},${match.longitude}&key=${API_KEY}`;
-      d3.select("#street-view").html(`<img src="${streetViewUrl}" alt="Street View">`);
+    // Labels
+    svg.selectAll(".label")
+      .data(trafficData)
+      .enter()
+      .append("text")
+        .attr("class", "label")
+        .attr("x", d => x(d.Crucero) + x.bandwidth() / 2)
+        .attr("y", d => y(d.total_incidentes) - 5)
+        .attr("text-anchor", "middle")
+        .text(d => d.total_incidentes);
+
+    function handleMouseOver(event, d) {
+      const match = intersectionsData.find(i => i.cruce === d.Crucero);
+      if (match) {
+        d3.select("#intersection-name").text(match.cruce);
+        d3.select("#total-incidents").text("Total Incidents: " + match.incidents);
+        d3.select("#semaforizado-status").text("Semaforizado: " + match.semaforizado);
+
+        const streetViewUrl = `https://maps.googleapis.com/maps/api/streetview?size=600x400&location=${match.latitude},${match.longitude}&fov=90&heading=235&pitch=10&key=${API_KEY}`;
+        d3.select("#street-view").html(`<img src="${streetViewUrl}" alt="Street View">`);
+      }
     }
-  }
 
-  function handleMouseOut(event, d) {
-    // Optional: clear info
-  }
+    function handleMouseOut(event, d) {
+      d3.select("#intersection-name").text("");
+      d3.select("#total-incidents").text("");
+      d3.select("#semaforizado-status").text("");
+      d3.select("#street-view").html("");
+    }
 
-}).catch(err => console.error("Error loading data:", err));
+  }).catch(err => console.error("Error loading data:", err));
+}
+
+// Initial render
+renderChart();
+
+// Re-render on window resize for responsiveness
+window.addEventListener("resize", renderChart);
 </script>
 
 </body>
