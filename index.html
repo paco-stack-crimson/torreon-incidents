@@ -1,173 +1,63 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Torreón Incidents</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <link rel="stylesheet" href="styles.css">
-
-    <script src="https://d3js.org/d3.v7.min.js"></script>
-
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
-    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-    
+  <meta charset="UTF-8">
+  <title>Torreón Incidents</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://d3js.org/d3.v7.min.js"></script>
 </head>
 <body>
-    <h1>Torreón Incidents</h1>
-    <div id="chart"></div>
+  <header>
+    <h1>Torreón Traffic Incidents</h1>
+    <p>Intersections with the highest number of incidents.</p>
+  </header>
 
-    <div class="intersection-info">
-        <h3 id="intersection-name"></h3>
-        <p id="total-incidents"></p>
-        <p id="semaforizado-status"></p>
-        <div id="street-view"></div>
-    </div>
+  <div id="chart"></div>
 
-    <div id="map"></div>
+  <script>
+  d3.json("data.json").then(data => {
+    // sort descending by incidents
+    data.intersections.sort((a, b) => b.incidents - a.incidents);
 
-    <script>
-        // NOTE: The GOOGLE_API_KEY URL in the handleMouseOver function 
-        // will likely NOT work as intended and should be fixed 
-        // to use the correct Google Street View Static/Embed API format.
-        const GOOGLE_API_KEY = "AIzaSyDDDWNfJBhaeC8wl3UGltGliUgXPaaYkOc"; // <-- Replace with your API key
-        
-        const margin = {top: 20, right: 20, bottom: 120, left: 60};
-        const width = 960 - margin.left - margin.right;
-        const height = 400 - margin.top - margin.bottom;
+    const margin = {top: 20, right: 20, bottom: 30, left: 250};
+    const width = 1000 - margin.left - margin.right;
+    const height = data.intersections.length * 22;
 
-        const svgContainer = d3.select("#chart")
-          .append("svg")
-          .attr("viewBox", `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
-          .attr("preserveAspectRatio", "xMidYMid meet");
+    const svg = d3.select("#chart").append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+        .attr("transform", `translate(${margin.left},${margin.top})`);
 
-        const svg = svgContainer.append("g")
-          .attr("transform", `translate(${margin.left},${margin.top})`);
+    const x = d3.scaleLinear()
+        .domain([0, d3.max(data.intersections, d => d.incidents)])
+        .range([0, width]);
 
-        Promise.all([
-          d3.csv("https://paco-stack-crimson.github.io/torreon-incidents/incidentes.csv"),
-          d3.json("https://paco-stack-crimson.github.io/torreon-incidents/datos.json")
-        ]).then(([csvData, jsonData]) => {
+    const y = d3.scaleBand()
+        .domain(data.intersections.map(d => d.cruce))
+        .range([0, height])
+        .padding(0.1);
 
-          csvData.forEach(d => { d.total_incidentes = +d.total_incidentes || 0; });
+    svg.selectAll(".bar")
+      .data(data.intersections)
+      .enter().append("rect")
+        .attr("class", "bar")
+        .attr("y", d => y(d.cruce))
+        .attr("height", y.bandwidth())
+        .attr("width", d => x(d.incidents))
+        .attr("fill", "#69b3a2")
+        .on("click", (event, d) => {
+          window.open(d.streetView, "_blank");
+        });
 
-          const jsonLookup = {};
-          jsonData.intersections.forEach(i => jsonLookup[i.cruce] = i);
+    svg.append("g")
+      .call(d3.axisLeft(y));
 
-          const mergedData = csvData.map(d => {
-            const extra = jsonLookup[d.Crucero] || {};
-            return {
-              Crucero: d.Crucero,
-              total_incidentes: d.total_incidentes || extra.incidents || 0,
-              semaforizado: extra.semaforizado || "",
-              latitude: extra.latitude || null,
-              longitude: extra.longitude || null
-            };
-          });
-
-          mergedData.sort((a, b) => b.total_incidentes - a.total_incidentes);
-
-          const x = d3.scaleBand()
-            .domain(mergedData.map(d => d.Crucero))
-            .range([0, width])
-            .padding(0.2);
-
-          const y = d3.scaleLinear()
-            .domain([0, d3.max(mergedData, d => d.total_incidentes) * 1.1])
-            .range([height, 0])
-            .nice();
-
-          const xAxis = svg.append("g")
-            .attr("transform", `translate(0,${height})`)
-            .call(d3.axisBottom(x).tickSizeOuter(0));
-
-          xAxis.selectAll("text")
-            .attr("transform", "rotate(-45)")
-            .attr("dx", "-0.8em")
-            .attr("dy", "0.15em")
-            .style("text-anchor", "end")
-            .style("font-size", "10px");
-
-          svg.append("g").call(d3.axisLeft(y));
-
-          // Draw bars
-          svg.selectAll(".bar")
-            .data(mergedData)
-            .enter()
-            .append("rect")
-            .attr("class", "bar")
-            .attr("x", d => x(d.Crucero))
-            .attr("y", d => y(d.total_incidentes))
-            .attr("width", x.bandwidth())
-            .attr("height", d => height - y(d.total_incidentes))
-            .attr("fill", "#69b3a2") // Initial bar color
-            .on("mouseover", handleMouseOver)
-            .on("mouseout", handleMouseOut);
-
-          // Add labels
-          svg.selectAll(".label")
-            .data(mergedData)
-            .enter()
-            .append("text")
-            .attr("class", "label")
-            .attr("x", d => x(d.Crucero) + x.bandwidth()/2)
-            .attr("y", d => y(d.total_incidentes) - 5)
-            .attr("text-anchor", "middle")
-            .text(d => d.total_incidentes);
-
-          // Leaflet map
-          const map = L.map('map').setView([25.55, -103.4], 12);
-          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap contributors' }).addTo(map);
-
-          const clusterGroup = L.markerClusterGroup();
-          const markers = {};
-
-          mergedData.forEach(d => {
-            if (d.latitude && d.longitude) {
-              const marker = L.marker([d.latitude, d.longitude])
-                .bindPopup(`
-                  <strong>${d.Crucero}</strong><br>
-                  Incidentos: ${d.total_incidentes}<br>
-                  Semaforizado: ${d.semaforizado}
-                `);
-              clusterGroup.addLayer(marker);
-              markers[d.Crucero] = marker;
-            }
-          });
-          map.addLayer(clusterGroup);
-
-          function handleMouseOver(event, d) {
-            d3.select(event.currentTarget).attr("fill", "#FF6F61"); // Highlight bar on hover
-            
-            d3.select("#intersection-name").text(d.Crucero);
-            d3.select("#total-incidents").text("Total de Incidentes: " + d.total_incidentes);
-            d3.select("#semaforizado-status").text("Semaforizado: " + d.semaforizado);
-
-            if (d.latitude && d.longitude) {
-              // NOTE: This Street View URL is placeholders and needs correction.
-              const streetViewUrl = `https://www.google.com/maps/embed/v1/streetview?key=${GOOGLE_API_KEY}&location=${d.latitude},${d.longitude}&heading=210&pitch=10&fov=80`;
-              d3.select("#street-view").html(`<iframe src="${streetViewUrl}" allowfullscreen></iframe>`);
-            }
-
-            const m = markers[d.Crucero];
-            if (m) {
-              map.flyTo(m.getLatLng(), 14, {duration: 0.8});
-              m.openPopup();
-            }
-          }
-
-          function handleMouseOut(event, d) {
-            d3.select(event.currentTarget).attr("fill", "#69b3a2"); // Revert bar color
-            
-            const m = markers[d.Crucero];
-            if (m) m.closePopup();
-          }
-
-        }).catch(err => console.error("Error loading data:", err));
-    </script>
+    svg.append("g")
+      .attr("transform", `translate(0,${height})`)
+      .call(d3.axisBottom(x));
+  });
+  </script>
 </body>
 </html>
