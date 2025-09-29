@@ -25,15 +25,16 @@
     }
     #chart {
       flex: 2;
-      min-width: 600px;
+      min-width: 300px;
     }
     .info-panel {
       flex: 1;
-      min-width: 300px;
+      min-width: 250px;
       background: #fff;
       padding: 15px;
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
       border-radius: 8px;
+      margin-top: 20px;
     }
     .info-panel h2 {
       font-size: 18px;
@@ -47,6 +48,15 @@
     .label {
       fill: #333;
       font-size: 10px;
+      transition: all 0.3s ease;
+    }
+    @media (max-width: 768px) {
+      .container {
+        flex-direction: column;
+      }
+      .info-panel {
+        margin-top: 20px;
+      }
     }
   </style>
 </head>
@@ -66,16 +76,7 @@
   <!-- D3 -->
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <script>
-    const margin = {top: 20, right: 20, bottom: 300, left: 60};
-    const width = 1000 - margin.left - margin.right;
-    const height = 500 - margin.top - margin.bottom;
-
-    const svg = d3.select("#chart")
-      .append("svg")
-      .attr("width", width + margin.left + margin.right)
-      .attr("height", height + margin.top + margin.bottom)
-      .append("g")
-      .attr("transform", `translate(${margin.left},${margin.top})`);
+    const container = document.getElementById("chart");
 
     Promise.all([
       d3.csv("incidentes.csv"),
@@ -89,97 +90,140 @@
         d.total_incidentes = +d.total_incidentes || 0;
       });
 
-      const x = d3.scaleBand()
-        .domain(trafficData.map(d => d.Crucero))
-        .range([0, width])
-        .padding(0.2);
+      function drawChart() {
+        container.innerHTML = ""; // Clear old chart
 
-      const y = d3.scaleLinear()
-        .domain([0, d3.max(trafficData, d => d.total_incidentes)])
-        .range([height, 0])
-        .nice();
+        const width = container.clientWidth;
+        const margin = {top: 20, right: 20, bottom: 150, left: 60};
+        const height = 500 - margin.top - margin.bottom;
 
-      // X axis with wrapped labels
-      const xAxis = svg.append("g")
-        .attr("transform", `translate(0,${height})`)
-        .call(d3.axisBottom(x));
+        const svg = d3.select("#chart")
+          .append("svg")
+          .attr("width", width)
+          .attr("height", height + margin.top + margin.bottom)
+          .append("g")
+          .attr("transform", `translate(${margin.left},${margin.top})`);
 
-      xAxis.selectAll("text")
-        .style("text-anchor", "end")
-        .attr("dx", "-0.5em")
-        .attr("dy", "0.8em")
-        .call(wrap, x.bandwidth());
+        const x = d3.scaleBand()
+          .domain(trafficData.map(d => d.Crucero))
+          .range([0, width - margin.left - margin.right])
+          .padding(0.2);
 
-      svg.append("g")
-        .call(d3.axisLeft(y));
+        const y = d3.scaleLinear()
+          .domain([0, d3.max(trafficData, d => d.total_incidentes)])
+          .range([height, 0])
+          .nice();
 
-      svg.selectAll("rect")
-        .data(trafficData)
-        .enter()
-        .append("rect")
-        .attr("x", d => x(d.Crucero))
-        .attr("y", d => y(d.total_incidentes))
-        .attr("width", x.bandwidth())
-        .attr("height", d => height - y(d.total_incidentes))
-        .attr("fill", "#69b3a2")
-        .on("mouseover", handleMouseOver);
+        // X axis
+        const xAxis = svg.append("g")
+          .attr("transform", `translate(0,${height})`)
+          .call(d3.axisBottom(x));
 
-      svg.selectAll(".label")
-        .data(trafficData)
-        .enter()
-        .append("text")
-        .attr("class", "label")
-        .attr("x", d => x(d.Crucero) + x.bandwidth() / 2)
-        .attr("y", d => y(d.total_incidentes) - 5)
-        .attr("text-anchor", "middle")
-        .text(d => d.total_incidentes);
+        xAxis.selectAll("text")
+          .style("text-anchor", "end")
+          .attr("dx", "-0.5em")
+          .attr("dy", "0.8em")
+          .attr("transform", "rotate(-45)")
+          .call(wrap, x.bandwidth());
 
-      function handleMouseOver(event, d) {
-        const match = intersectionsData.find(i => i.cruce === d.Crucero);
+        // Y axis
+        svg.append("g")
+          .call(d3.axisLeft(y));
 
-        if (match) {
-          d3.select("#intersection-name").text(match.cruce);
-          d3.select("#total-incidents").text("Total de Incidentes: " + match.incidents);
-          d3.select("#semaforizado-status").text("Semaforizado: " + match.semaforizado);
+        // Bars with hover animation
+        svg.selectAll("rect")
+          .data(trafficData)
+          .enter()
+          .append("rect")
+          .attr("x", d => x(d.Crucero))
+          .attr("y", d => y(d.total_incidentes))
+          .attr("width", x.bandwidth())
+          .attr("height", d => height - y(d.total_incidentes))
+          .attr("fill", "#69b3a2")
+          .style("transition", "all 0.3s ease")
+          .on("mouseover", function(event, d) {
+            d3.select(this)
+              .attr("fill", "#ff6347")
+              .attr("y", y(d.total_incidentes) - 10)
+              .attr("height", height - y(d.total_incidentes) + 10);
 
-          const lat = match.latitude;
-          const lng = match.longitude;
-          const embedUrl = `https://www.google.com/maps/embed/v1/streetview?key=YOUR_API_KEY&location=${lat},${lng}&heading=210&pitch=10&fov=80`;
+            svg.selectAll(".label")
+              .filter(l => l.Crucero === d.Crucero)
+              .transition()
+              .duration(300)
+              .attr("y", y(d.total_incidentes) - 15)
+              .style("font-size", "14px");
 
-          d3.select("#street-view").html(`
-            <iframe 
-              loading="lazy" 
-              allowfullscreen 
-              src="${embedUrl}">
-            </iframe>
-          `);
+            handleMouseOver(event, d);
+          })
+          .on("mouseout", function(event, d) {
+            d3.select(this)
+              .attr("fill", "#69b3a2")
+              .attr("y", y(d.total_incidentes))
+              .attr("height", height - y(d.total_incidentes));
+
+            svg.selectAll(".label")
+              .filter(l => l.Crucero === d.Crucero)
+              .transition()
+              .duration(300)
+              .attr("y", y(d.total_incidentes) - 5)
+              .style("font-size", "10px");
+          });
+
+        // Labels
+        svg.selectAll(".label")
+          .data(trafficData)
+          .enter()
+          .append("text")
+          .attr("class", "label")
+          .attr("x", d => x(d.Crucero) + x.bandwidth() / 2)
+          .attr("y", d => y(d.total_incidentes) - 5)
+          .attr("text-anchor", "middle")
+          .text(d => d.total_incidentes);
+
+        function handleMouseOver(event, d) {
+          const match = intersectionsData.find(i => i.cruce === d.Crucero);
+          if (match) {
+            d3.select("#intersection-name").text(match.cruce);
+            d3.select("#total-incidents").text("Total de Incidentes: " + match.incidents);
+            d3.select("#semaforizado-status").text("Semaforizado: " + match.semaforizado);
+
+            const lat = match.latitude;
+            const lng = match.longitude;
+            const embedUrl = `https://www.google.com/maps/embed/v1/streetview?key=YOUR_API_KEY&location=${lat},${lng}&heading=210&pitch=10&fov=80`;
+
+            d3.select("#street-view").html(`
+              <iframe loading="lazy" allowfullscreen src="${embedUrl}"></iframe>
+            `);
+          }
+        }
+
+        function wrap(text, width) {
+          text.each(function() {
+            const textEl = d3.select(this),
+                  words = textEl.text().split(/\s+/).reverse(),
+                  y = textEl.attr("y"),
+                  dy = parseFloat(textEl.attr("dy")) || 0;
+            let word, line = [], lineNumber = 0;
+            let tspan = textEl.text(null).append("tspan").attr("x", 0).attr("y", y).attr("dy", dy + "em");
+            while (word = words.pop()) {
+              line.push(word);
+              tspan.text(line.join(" "));
+              if (tspan.node().getComputedTextLength() > width) {
+                line.pop();
+                tspan.text(line.join(" "));
+                line = [word];
+                tspan = textEl.append("tspan").attr("x", 0).attr("y", y)
+                  .attr("dy", ++lineNumber * 1.1 + dy + "em")
+                  .text(word);
+              }
+            }
+          });
         }
       }
 
-      // Function to wrap long x-axis labels
-      function wrap(text, width) {
-        text.each(function() {
-          const text = d3.select(this),
-                words = text.text().split(/\s+/).reverse(),
-                y = text.attr("y"),
-                dy = parseFloat(text.attr("dy")) || 0;
-          let word,
-              line = [],
-              lineNumber = 0,
-              tspan = text.text(null).append("tspan").attr("x", 0).attr("y", y).attr("dy", dy + "em");
-          while (word = words.pop()) {
-            line.push(word);
-            tspan.text(line.join(" "));
-            if (tspan.node().getComputedTextLength() > width) {
-              line.pop();
-              tspan.text(line.join(" "));
-              line = [word];
-              tspan = text.append("tspan").attr("x", 0).attr("y", y).attr("dy", ++lineNumber * 1.1 + dy + "em").text(word);
-            }
-          }
-        });
-      }
-
+      drawChart();
+      window.addEventListener("resize", drawChart);
     });
   </script>
 </body>
