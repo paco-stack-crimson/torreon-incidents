@@ -19,7 +19,7 @@
   }
 
   #chart-container {
-    width: 90%;
+    width: 95%;
     max-width: 1200px;
     margin: 0 auto;
     overflow-x: auto;
@@ -31,11 +31,11 @@
 
   svg {
     display: block;
-    margin: 0 auto;
   }
 
   .bar {
     fill: #69b3a2;
+    cursor: pointer;
   }
 
   .label {
@@ -45,6 +45,7 @@
 
   .intersection-info img {
     width: 100%;
+    max-width: 600px;
     height: auto;
     border-radius: 8px;
     margin-top: 10px;
@@ -54,6 +55,10 @@
     max-width: 800px;
     margin: 20px auto 0;
     text-align: left;
+    background: #fff;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   }
 </style>
 </head>
@@ -73,10 +78,12 @@
 </div>
 
 <script>
+const API_KEY = "YOUR_API_KEY"; // <-- Insert your valid Google Maps API key here
+
 const container = document.getElementById('chart-container');
 const margin = { top: 20, right: 20, bottom: 150, left: 60 };
-let width = container.clientWidth - margin.left - margin.right;
-let height = 350 - margin.top - margin.bottom; // compact height
+let width = Math.max(container.clientWidth, 2000) - margin.left - margin.right; // virtual width
+let height = 450 - margin.top - margin.bottom;
 
 const svg = d3.select("#chart")
   .append("svg")
@@ -108,7 +115,7 @@ Promise.all([
     .attr("transform", `translate(0,${height})`)
     .call(d3.axisBottom(x))
     .selectAll("text")
-      .attr("transform", "rotate(-30)")
+      .attr("transform", "rotate(-45)")
       .style("text-anchor", "end")
       .style("font-size", "12px");
 
@@ -140,14 +147,15 @@ Promise.all([
       .attr("text-anchor", "middle")
       .text(d => d.total_incidentes);
 
-  // Hover info
   function handleMouseOver(event, d) {
     const match = intersectionsData.find(i => i.cruce === d.Crucero);
     if (match) {
       d3.select("#intersection-name").text(match.cruce);
       d3.select("#total-incidents").text("Total Incidents: " + match.incidents);
       d3.select("#semaforizado-status").text("Semaforizado: " + match.semaforizado);
-      d3.select("#street-view").html(`<img src="${match.streetView}" alt="Street View">`);
+
+      const streetViewUrl = `https://maps.googleapis.com/maps/api/streetview?size=600x400&location=${match.latitude},${match.longitude}&key=${API_KEY}`;
+      d3.select("#street-view").html(`<img src="${streetViewUrl}" alt="Street View">`);
     }
   }
 
