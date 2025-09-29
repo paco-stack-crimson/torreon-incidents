@@ -3,245 +3,61 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Torreón Incidents</title>
+  <title>Test D3 Chart</title>
   <script src="https://d3js.org/d3.v7.min.js"></script>
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-  />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"
-  />
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"
-  />
-  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      background-color: #f5f5f5;
-      color: #333;
-    }
-    header {
-      width: 100%;
-      max-width: 960px;
-      padding: 20px;
-      text-align: center;
-    }
-    header h1 {
-      margin: 0;
-      font-size: 2em;
-    }
-    #main {
-      display: flex;
-      flex-direction: column;
-      width: 100%;
-      max-width: 1200px;
-      padding: 10px;
-      box-sizing: border-box;
-    }
-    .viz-container {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
-    /* On larger screens split horizontally */
-    @media(min-width: 800px) {
-      .viz-container {
-        flex-direction: row;
-      }
-    }
-    #chart {
-      flex: 2;
-      background: white;
-      border: 1px solid #ddd;
-      padding: 10px;
-    }
-    #map {
-      flex: 1;
-      background: white;
-      border: 1px solid #ddd;
-      height: 400px;
-    }
-    #info-panel {
-      margin-top: 20px;
-      width: 100%;
-      max-width: 960px;
-      background: white;
-      border: 1px solid #ddd;
-      padding: 15px;
-    }
-    #info-panel h3 {
-      margin-top: 0;
-    }
-    .bar {
-      fill: #69b3a2;
-    }
-    .bar:hover {
-      fill: #4a8c75;
-      cursor: pointer;
-    }
-    .axis text {
-      font-size: 12px;
-    }
+    body { font-family: sans-serif; }
+    #chart { margin: 20px; }
+    .bar { fill: steelblue; }
+    .label { fill: #333; font-size: 12px; }
   </style>
-
 </head>
 <body>
-  <header>
-    <h1>Torreón Traffic Incidents</h1>
-    <p>Intersections ordered by number of incidents. Hover or click a bar for more info, map location, and a Street View link.</p>
-  </header>
-
-  <div id="main">
-    <div class="viz-container">
-      <div id="chart"></div>
-      <div id="map"></div>
-    </div>
-
-    <div id="info-panel">
-      <h3 id="info-cruce">Hover over a bar</h3>
-      <p><strong>Total de Incidentes:</strong> <span id="info-incidents">—</span></p>
-      <p><strong>Semaforizado:</strong> <span id="info-semaforizado">—</span></p>
-      <p id="info-streetview"><a href="#" target="_blank">Street View</a></p>
-    </div>
-  </div>
-
+  <h1>Test Chart</h1>
+  <div id="chart"></div>
   <script>
-    const margin = { top: 20, right: 20, bottom: 80, left: 200 };
-    const width = 700 - margin.left - margin.right;
-    const height = 500 - margin.top - margin.bottom;
-
-    const svg = d3
-      .select("#chart")
-      .append("svg")
-      .attr("width", width + margin.left + margin.right)
-      .attr("height", height + margin.top + margin.bottom)
-      .append("g")
-      .attr("transform", `translate(${margin.left},${margin.top})`);
-
-    Promise.all([
-      d3.csv("https://paco-stack-crimson.github.io/torreon-incidents/incidentes.csv"),
-      d3.json("https://paco-stack-crimson.github.io/torreon-incidents/datos.json"),
-    ]).then(([csv, json]) => {
-      csv.forEach(d => (d.total_incidentes = +d.total_incidentes || 0));
-      const lookup = {};
-      json.intersections.forEach(i => {
-        lookup[i.cruce] = i;
+    d3.csv("https://paco-stack-crimson.github.io/torreon-incidents/incidentes.csv").then(data => {
+      data.forEach(d => {
+        d.total_incidentes = +d.total_incidentes || 0;
       });
+      const margin = { top: 20, right: 20, bottom: 50, left: 120 };
+      const width = 800 - margin.left - margin.right;
+      const height = data.length * 20;
 
-      const data = csv.map(d => {
-        const extra = lookup[d.Crucero] || {};
-        return {
-          cruce: d.Crucero,
-          total_incidentes: d.total_incidentes,
-          semaforizado: extra.semaforizado || "N/A",
-          latitude: extra.latitude,
-          longitude: extra.longitude,
-          streetView: extra.streetView || "#",
-        };
-      });
+      const svg = d3.select("#chart")
+        .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", `translate(${margin.left},${margin.top})`);
 
-      // Sort descending
-      data.sort((a, b) => b.total_incidentes - a.total_incidentes);
-
-      const x = d3
-        .scaleLinear()
+      const x = d3.scaleLinear()
         .domain([0, d3.max(data, d => d.total_incidentes)])
         .range([0, width]);
 
-      const y = d3
-        .scaleBand()
-        .domain(data.map(d => d.cruce))
+      const y = d3.scaleBand()
+        .domain(data.map(d => d.Crucero))
         .range([0, height])
         .padding(0.1);
 
-      svg
-        .append("g")
-        .call(d3.axisLeft(y))
-        .selectAll("text")
-        .style("font-size", "12px");
-
-      svg
-        .append("g")
-        .attr("transform", `translate(0,${height})`)
-        .call(d3.axisBottom(x))
-        .selectAll("text")
-        .attr("transform", "rotate(-45)")
-        .style("text-anchor", "end");
-
-      const bars = svg
-        .selectAll(".bar")
+      svg.selectAll(".bar")
         .data(data)
         .enter()
         .append("rect")
         .attr("class", "bar")
-        .attr("y", d => y(d.cruce))
+        .attr("y", d => y(d.Crucero))
         .attr("height", y.bandwidth())
         .attr("x", 0)
-        .attr("width", d => x(d.total_incidentes))
-        .on("mouseover", onHover)
-        .on("mouseout", onOut)
-        .on("click", onClick);
+        .attr("width", d => x(d.total_incidentes));
 
-      // Leaflet map
-      const map = L.map("map").setView([25.55, -103.4], 12);
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        maxZoom: 19,
-        attribution: "&copy; OpenStreetMap contributors",
-      }).addTo(map);
+      svg.append("g")
+        .call(d3.axisLeft(y));
 
-      const cluster = L.markerClusterGroup();
-      const markers = {};
-
-      data.forEach(d => {
-        if (d.latitude != null && d.longitude != null) {
-          const marker = L.marker([d.latitude, d.longitude]).bindPopup(`
-            <strong>${d.cruce}</strong><br>
-            Incidentes: ${d.total_incidentes}<br>
-            Semaforizado: ${d.semaforizado}<br>
-            <a href="${d.streetView}" target="_blank">Street View</a>
-          `);
-          cluster.addLayer(marker);
-          markers[d.cruce] = marker;
-        }
-      });
-      map.addLayer(cluster);
-
-      function onHover(event, d) {
-        // highlight bar
-        d3.select(this).attr("fill", "#4a8c75");
-
-        // update info panel
-        d3.select("#info-cruce").text(d.cruce);
-        d3.select("#info-incidents").text(d.total_incidentes);
-        d3.select("#info-semaforizado").text(d.semaforizado);
-        d3.select("#info-streetview a").attr("href", d.streetView);
-
-        // pan map and open popup
-        const m = markers[d.cruce];
-        if (m) {
-          map.flyTo(m.getLatLng(), 14, { duration: 0.6 });
-          m.openPopup();
-        }
-      }
-
-      function onOut(event, d) {
-        d3.select(this).attr("fill", "#69b3a2");
-      }
-
-      function onClick(event, d) {
-        window.open(d.streetView, "_blank");
-      }
+      svg.append("g")
+        .attr("transform", `translate(0,${height})`)
+        .call(d3.axisBottom(x));
+    }).catch(err => {
+      console.error("Error loading CSV:", err);
     });
   </script>
 </body>
