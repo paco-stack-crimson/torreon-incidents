@@ -1,154 +1,111 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Torreón Traffic Incidents</title>
-  <script src="https://d3js.org/d3.v7.min.js"></script>
-  <style>
-    body {
-      font-family: 'Arial', sans-serif;
-      margin: 0;
-      padding: 20px;
-      background-color: #f4f4f4;
-    }
-    h1 {
-      text-align: center;
-      color: #333;
-    }
-    #chart-container {
-      width: 100%;
-      overflow-x: auto;
-      margin-top: 20px;
-    }
-    svg {
-      width: 100%;
-      height: auto;
-    }
-    .bar {
-      fill: steelblue;
-    }
-    .bar:hover {
-      fill: orange;
-    }
-    .x-axis text {
-      font-size: 12px;
-      text-anchor: middle;
-    }
-    .y-axis text {
-      font-size: 12px;
-    }
-  </style>
+<meta charset="UTF-8">
+<title>Torreon Traffic Incidents</title>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<style>
+  body { font-family: Arial, sans-serif; margin:0; padding:20px; background:#f7f7f7; }
+  h1 { text-align:center; }
+  #chart-container { width:100%; overflow-x:auto; background:#fff; padding:20px; border-radius:12px; box-shadow:0 2px 10px rgba(0,0,0,0.1);}
+  svg { display:block; }
+  .bar { fill:#69b3a2; cursor:pointer; }
+  .bar:hover { fill:orange; }
+  .x-axis text { font-size:12px; }
+  .y-axis text { font-size:12px; }
+</style>
 </head>
 <body>
 
-  <h1>Torreón Traffic Incidents</h1>
+<h1>Torreon Traffic Incidents</h1>
+<div id="chart-container"></div>
 
-  <div id="chart-container"></div>
+<script>
+const API_KEY = "YOUR_API_KEY"; // replace with your Google Maps API key
 
-  <script>
-    const API_KEY = 'YOUR_GOOGLE_MAPS_API_KEY'; // Replace with your actual API key
+function renderChart() {
+  d3.select("#chart-container").selectAll("*").remove();
 
-    // Fetch and process data
-    Promise.all([
-      d3.csv("https://paco-stack-crimson.github.io/torreon-incidents/incidentes.csv"),
-      d3.json("https://paco-stack-crimson.github.io/torreon-incidents/datos.json")
-    ])
-    .then(([trafficData, intersectionsData]) => {
-      // Clean and preprocess data
-      trafficData = trafficData.filter(d => d.Crucero && d.total_incidentes);
-      trafficData.forEach(d => {
-        d.total_incidentes = +d.total_incidentes;
-      });
+  Promise.all([
+    d3.csv("https://paco-stack-crimson.github.io/torreon-incidents/incidentes.csv"),
+    d3.json("https://paco-stack-crimson.github.io/torreon-incidents/datos.json")
+  ]).then(([trafficData, intersectionsData]) => {
+    trafficData = trafficData.filter(d => d.Crucero && d.total_incidentes);
+    trafficData.forEach(d => d.total_incidentes = +d.total_incidentes);
 
-      // Set up chart dimensions
-      const margin = { top: 20, right: 20, bottom: 150, left: 60 };
-      const width = document.getElementById('chart-container').clientWidth - margin.left - margin.right;
-      const height = 500 - margin.top - margin.bottom;
+    const margin = {top:20,right:20,bottom:180,left:60};
+    const containerWidth = document.getElementById("chart-container").clientWidth;
+    const height = 450 - margin.top - margin.bottom;
 
-      // Create SVG container
-      const svg = d3.select("#chart-container")
-        .append("svg")
-        .attr("width", width + margin.left + margin.right)
-        .attr("height", height + margin.top + margin.bottom)
-        .append("g")
-        .attr("transform", `translate(${margin.left},${margin.top})`);
+    const minBarWidth = 40;
+    const chartWidth = Math.max(containerWidth, trafficData.length * minBarWidth);
 
-      // Set up scales
-      const x = d3.scaleBand()
-        .domain(trafficData.map(d => d.Crucero))
-        .range([0, width])
-        .padding(0.1);
+    const svg = d3.select("#chart-container")
+      .append("svg")
+      .attr("width", chartWidth + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+      .attr("transform", `translate(${margin.left},${margin.top})`);
 
-      const y = d3.scaleLinear()
-        .domain([0, d3.max(trafficData, d => d.total_incidentes)])
-        .nice()
-        .range([height, 0]);
+    const x = d3.scaleBand()
+      .domain(trafficData.map(d=>d.Crucero))
+      .range([0, chartWidth])
+      .padding(0.2);
 
-      // Add X axis
-      svg.append("g")
-        .attr("class", "x-axis")
-        .attr("transform", `translate(0,${height})`)
-        .call(d3.axisBottom(x).tickSize(0))
-        .selectAll("text")
-        .style("text-anchor", "middle")
-        .style("font-size", "12px")
-        .attr("transform", "rotate(-45)");
+    const y = d3.scaleLinear()
+      .domain([0,d3.max(trafficData,d=>d.total_incidentes)]).nice()
+      .range([height,0]);
 
-      // Add Y axis
-      svg.append("g")
-        .attr("class", "y-axis")
-        .call(d3.axisLeft(y).ticks(5));
+    svg.append("g")
+      .attr("transform", `translate(0,${height})`)
+      .call(d3.axisBottom(x))
+      .selectAll("text")
+        .attr("transform","rotate(-60)")
+        .style("text-anchor","end");
 
-      // Add bars
-      svg.selectAll(".bar")
-        .data(trafficData)
-        .enter()
-        .append("rect")
-        .attr("class", "bar")
-        .attr("x", d => x(d.Crucero))
-        .attr("y", d => y(d.total_incidentes))
+    svg.append("g").call(d3.axisLeft(y));
+
+    svg.selectAll(".bar")
+      .data(trafficData)
+      .enter()
+      .append("rect")
+        .attr("class","bar")
+        .attr("x", d=>x(d.Crucero))
+        .attr("y", d=>y(d.total_incidentes))
         .attr("width", x.bandwidth())
-        .attr("height", d => height - y(d.total_incidentes))
-        .on("mouseover", function(event, d) {
-          const intersection = intersectionsData.find(i => i.cruce === d.Crucero);
-          if (intersection) {
-            const streetViewUrl = `https://maps.googleapis.com/maps/api/streetview?size=600x400&location=${intersection.latitude},${intersection.longitude}&key=${API_KEY}`;
-            d3.select("body").append("div")
-              .attr("class", "tooltip")
-              .html(`
-                <h3>${intersection.cruce}</h3>
-                <p>Total Incidents: ${intersection.incidents}</p>
-                <p>Semaforizado: ${intersection.semaforizado}</p>
-                <img src="${streetViewUrl}" alt="Street View">
-              `)
-              .style("position", "absolute")
-              .style("top", `${event.pageY + 10}px`)
-              .style("left", `${event.pageX + 10}px`)
-              .style("background-color", "white")
-              .style("border", "1px solid #ccc")
-              .style("padding", "10px")
-              .style("box-shadow", "0 2px 10px rgba(0,0,0,0.1)");
+        .attr("height", d=>height - y(d.total_incidentes))
+        .on("mouseover", (event,d)=>{
+          const match = intersectionsData.find(i=>i.cruce===d.Crucero);
+          if(match){
+            const streetViewUrl = `https://maps.googleapis.com/maps/api/streetview?size=600x400&location=${match.latitude},${match.longitude}&key=${API_KEY}`;
+            d3.select("#chart-container").append("div")
+              .attr("class","tooltip")
+              .html(`<h3>${match.cruce}</h3><p>Total: ${match.incidents}</p><p>Semaforizado: ${match.semaforizado}</p><img src="${streetViewUrl}">`)
+              .style("position","absolute")
+              .style("top",event.pageY+"px")
+              .style("left",event.pageX+"px")
+              .style("background","#fff")
+              .style("padding","10px")
+              .style("border","1px solid #ccc")
+              .style("box-shadow","0 2px 8px rgba(0,0,0,0.2)");
           }
         })
-        .on("mouseout", function() {
-          d3.select(".tooltip").remove();
-        });
+        .on("mouseout", ()=>d3.selectAll(".tooltip").remove());
 
-      // Add labels
-      svg.selectAll(".label")
-        .data(trafficData)
-        .enter()
-        .append("text")
-        .attr("class", "label")
-        .attr("x", d => x(d.Crucero) + x.bandwidth() / 2)
-        .attr("y", d => y(d.total_incidentes) - 5)
-        .attr("text-anchor", "middle")
-        .style("font-size", "12px")
-        .text(d => d.total_incidentes);
-    })
-    .catch(error => console.error("Error loading data:", error));
-  </script>
+    svg.selectAll(".label")
+      .data(trafficData)
+      .enter()
+      .append("text")
+        .attr("x", d=>x(d.Crucero)+x.bandwidth()/2)
+        .attr("y", d=>y(d.total_incidentes)-5)
+        .attr("text-anchor","middle")
+        .text(d=>d.total_incidentes);
+  });
+}
+
+renderChart();
+window.addEventListener("resize", renderChart);
+</script>
 
 </body>
 </html>
