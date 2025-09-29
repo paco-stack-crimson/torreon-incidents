@@ -3,26 +3,54 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Test D3 Chart</title>
+  <title>Torreón Incidents</title>
+  <!-- Load Montserrat font -->
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <style>
-    body { font-family: sans-serif; }
-    #chart { margin: 20px; }
-    .bar { fill: steelblue; }
-    .label { fill: #333; font-size: 12px; }
+    body {
+      font-family: 'Montserrat', sans-serif;
+      margin: 0;
+      padding: 20px;
+    }
+    #chart {
+      width: 100%;
+      max-width: 960px;
+      margin: auto;
+    }
+    .bar {
+      fill: steelblue;
+    }
+    .bar:hover {
+      fill: #4a8c75;
+    }
+    .label {
+      fill: #333;
+      font-size: 12px;
+      font-family: 'Montserrat', sans-serif;
+    }
+    .axis text {
+      font-size: 12px;
+      font-family: 'Montserrat', sans-serif;
+    }
   </style>
 </head>
 <body>
-  <h1>Test Chart</h1>
+  <h1>Torreón Incidents</h1>
   <div id="chart"></div>
+
   <script>
     d3.csv("https://paco-stack-crimson.github.io/torreon-incidents/incidentes.csv").then(data => {
       data.forEach(d => {
         d.total_incidentes = +d.total_incidentes || 0;
       });
-      const margin = { top: 20, right: 20, bottom: 50, left: 120 };
-      const width = 800 - margin.left - margin.right;
-      const height = data.length * 20;
+      // Sort descending
+      data.sort((a, b) => b.total_incidentes - a.total_incidentes);
+
+      const margin = { top: 20, right: 20, bottom: 30, left: 250 };
+      const width = 960 - margin.left - margin.right;
+      const barHeight = 25;
+      const height = data.length * barHeight;
 
       const svg = d3.select("#chart")
         .append("svg")
@@ -40,6 +68,7 @@
         .range([0, height])
         .padding(0.1);
 
+      // Bars
       svg.selectAll(".bar")
         .data(data)
         .enter()
@@ -50,14 +79,31 @@
         .attr("x", 0)
         .attr("width", d => x(d.total_incidentes));
 
+      // Labels on left axis
       svg.append("g")
-        .call(d3.axisLeft(y));
+        .call(d3.axisLeft(y))
+        .selectAll("text")
+        .style("font-size", "12px")
+        .style("font-family", "Montserrat");
 
+      // X axis at bottom
       svg.append("g")
         .attr("transform", `translate(0,${height})`)
-        .call(d3.axisBottom(x));
+        .call(d3.axisBottom(x).ticks(5))
+        .selectAll("text")
+        .style("font-family", "Montserrat");
+
+      // Numeric labels at end of bars
+      svg.selectAll(".label")
+        .data(data)
+        .enter()
+        .append("text")
+        .attr("class", "label")
+        .attr("x", d => x(d.total_incidentes) + 5)
+        .attr("y", d => y(d.Crucero) + y.bandwidth()/2 + 4)
+        .text(d => d.total_incidentes);
     }).catch(err => {
-      console.error("Error loading CSV:", err);
+      console.error("Failed to load or draw:", err);
     });
   </script>
 </body>
