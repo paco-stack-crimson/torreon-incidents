@@ -43,23 +43,17 @@
     fill: #333;
   }
 
-  .tooltip {
-    position: absolute;
-    background: rgba(0,0,0,0.8);
-    color: #fff;
-    padding: 5px 10px;
-    border-radius: 6px;
-    pointer-events: none;
-    font-size: 12px;
-    opacity: 0;
-    transition: opacity 0.2s;
-  }
-
   .intersection-info img {
     width: 100%;
     height: auto;
     border-radius: 8px;
     margin-top: 10px;
+  }
+
+  .intersection-info {
+    max-width: 800px;
+    margin: 20px auto 0;
+    text-align: left;
   }
 </style>
 </head>
@@ -79,10 +73,10 @@
 </div>
 
 <script>
-const margin = { top: 20, right: 20, bottom: 150, left: 60 };
 const container = document.getElementById('chart-container');
+const margin = { top: 20, right: 20, bottom: 150, left: 60 };
 let width = container.clientWidth - margin.left - margin.right;
-let height = 500 - margin.top - margin.bottom;
+let height = 350 - margin.top - margin.bottom; // compact height
 
 const svg = d3.select("#chart")
   .append("svg")
@@ -95,11 +89,9 @@ Promise.all([
   d3.csv("https://paco-stack-crimson.github.io/torreon-incidents/incidentes.csv"),
   d3.json("https://paco-stack-crimson.github.io/torreon-incidents/datos.json")
 ]).then(function(files) {
-
   const trafficData = files[0];
   const intersectionsData = files[1].intersections;
 
-  // Convert incidents to numbers
   trafficData.forEach(d => d.total_incidentes = +d.total_incidentes || 0);
 
   const x = d3.scaleBand()
@@ -137,7 +129,7 @@ Promise.all([
       .on("mouseover", handleMouseOver)
       .on("mouseout", handleMouseOut);
 
-  // Labels on top
+  // Labels
   svg.selectAll(".label")
     .data(trafficData)
     .enter()
@@ -148,7 +140,7 @@ Promise.all([
       .attr("text-anchor", "middle")
       .text(d => d.total_incidentes);
 
-  // Tooltip and Street View
+  // Hover info
   function handleMouseOver(event, d) {
     const match = intersectionsData.find(i => i.cruce === d.Crucero);
     if (match) {
@@ -168,4 +160,3 @@ Promise.all([
 
 </body>
 </html>
-
