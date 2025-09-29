@@ -12,16 +12,20 @@
       padding: 0;
       background: #f7f7f7;
       color: #333;
+      text-align: center;
     }
     h1 {
-      text-align: center;
       margin: 20px 0;
     }
     #chart-container {
-      width: 95%;
-      margin: auto;
+      display: inline-block;
+      width: 90%; /* Slightly smaller than full width */
       overflow-x: auto;
       padding-bottom: 50px;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      margin-bottom: 30px;
     }
     .bar {
       fill: #69b3a2;
@@ -66,8 +70,8 @@
 
   <script>
     const margin = {top: 20, right: 20, bottom: 250, left: 60};
-    const width = 1200 - margin.left - margin.right;
-    const height = 600 - margin.top - margin.bottom;
+    const width = 1100 - margin.left - margin.right; // slightly smaller
+    const height = 550 - margin.top - margin.bottom; // slightly smaller
 
     const svg = d3.select("#chart")
       .append("svg")
@@ -76,7 +80,6 @@
       .append("g")
       .attr("transform", `translate(${margin.left},${margin.top})`);
 
-    // Function to wrap text
     function wrap(text, width) {
       text.each(function () {
         var text = d3.select(this),
@@ -172,7 +175,7 @@
           d3.select("#total-incidents").text("Total Incidents: " + matching.incidents);
           d3.select("#semaforizado-status").text("Traffic Light: " + matching.semaforizado);
 
-          const streetUrl = `https://www.google.com/maps/embed/v1/streetview?key=YOUR_API_KEY&location=${matching.latitude},${matching.longitude}&heading=210&pitch=10&fov=80`;
+          const streetUrl = `https://www.google.com/maps/embed/v1/streetview?key=AIzaSyBkmDFkq1wFlpj4UkxaEJlfDdjZVMO2D6A&location=${matching.latitude},${matching.longitude}&heading=210&pitch=10&fov=80`;
           d3.select("#street-view").attr("src", streetUrl);
         }
       }
