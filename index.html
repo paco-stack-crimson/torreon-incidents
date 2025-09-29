@@ -12,7 +12,7 @@
     display: block;
     width: 95%;
     margin: 0 auto 30px auto;
-    overflow-x: auto; /* horizontal scroll */
+    overflow-x: auto;
     padding-bottom: 20px;
     background: #fff;
     border-radius: 12px;
@@ -48,20 +48,21 @@
 </div>
 
 <script>
-const margin = {top: 20, right: 20, bottom: 250, left: 60};
+const margin = {top: 20, right: 20, bottom: 200, left: 60};
 let svg, width, height;
 
-// Load data
 Promise.all([
   d3.csv("https://paco-stack-crimson.github.io/torreon-incidents/incidentes.csv"),
   d3.json("https://paco-stack-crimson.github.io/torreon-incidents/datos.json")
 ]).then(([trafficData, intersectionsData]) => {
 
-  // Convert total_incidentes to numbers
+  // Convert incidents to number
   trafficData.forEach(d => d.total_incidentes = +d.total_incidentes || 0);
 
-  // Dynamic width: 50px per bar
-  width = trafficData.length * 50;
+  // Dynamic width: calculate space based on longest Crucero name
+  const maxLabelLength = d3.max(trafficData, d => d.Crucero.length);
+  const spacePerBar = Math.max(50, maxLabelLength * 8); // 8px per character
+  width = trafficData.length * spacePerBar;
   height = 500;
 
   svg = d3.select("#chart")
@@ -80,17 +81,45 @@ Promise.all([
               .domain([0, d3.max(trafficData, d => d.total_incidentes)]).nice()
               .range([height, 0]);
 
-  // X Axis
   const xAxis = svg.append("g")
                    .attr("transform", `translate(0,${height})`)
                    .call(d3.axisBottom(x));
 
-  xAxis.selectAll("text")
-       .attr("transform", "rotate(-45)")
-       .style("text-anchor", "end")
-       .style("font-size", "12px");
+  // Wrap function for long names
+  function wrap(text, width) {
+    text.each(function() {
+      const textEl = d3.select(this),
+            words = textEl.text().split(/\s+/).reverse();
+      let word,
+          line = [],
+          lineNumber = 0,
+          lineHeight = 1.1, // em
+          y = textEl.attr("y"),
+          dy = 0,
+          tspan = textEl.text(null).append("tspan").attr("x", 0).attr("y", y).attr("dy", dy + "em");
 
-  // Y Axis
+      while (word = words.pop()) {
+        line.push(word);
+        tspan.text(line.join(" "));
+        if (tspan.node().getComputedTextLength() > width) {
+          line.pop();
+          tspan.text(line.join(" "));
+          line = [word];
+          tspan = textEl.append("tspan")
+                        .attr("x", 0)
+                        .attr("y", y)
+                        .attr("dy", ++lineNumber * lineHeight + dy + "em")
+                        .text(word);
+        }
+      }
+    });
+  }
+
+  xAxis.selectAll("text")
+       .call(wrap, spacePerBar)
+       .attr("transform", "rotate(-45)")
+       .style("text-anchor", "end");
+
   svg.append("g").call(d3.axisLeft(y));
 
   // Bars
