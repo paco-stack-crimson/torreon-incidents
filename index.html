@@ -76,6 +76,38 @@
       .append("g")
       .attr("transform", `translate(${margin.left},${margin.top})`);
 
+    // Function to wrap text
+    function wrap(text, width) {
+      text.each(function () {
+        var text = d3.select(this),
+            words = text.text().split(/\s+/).reverse(),
+            word,
+            line = [],
+            lineHeight = 1.1,
+            y = text.attr("y"),
+            dy = parseFloat(text.attr("dy")),
+            tspan = text.text(null)
+                        .append("tspan")
+                        .attr("x", 0)
+                        .attr("y", y)
+                        .attr("dy", dy + "em");
+        while (word = words.pop()) {
+          line.push(word);
+          tspan.text(line.join(" "));
+          if (tspan.node().getComputedTextLength() > width) {
+            line.pop();
+            tspan.text(line.join(" "));
+            line = [word];
+            tspan = text.append("tspan")
+                        .attr("x", 0)
+                        .attr("y", y)
+                        .attr("dy", ++lineHeight * 1.1 + "em")
+                        .text(word);
+          }
+        }
+      });
+    }
+
     Promise.all([
       d3.csv("https://paco-stack-crimson.github.io/torreon-incidents/incidentes.csv"),
       d3.json("https://paco-stack-crimson.github.io/torreon-incidents/datos.json")
@@ -95,13 +127,15 @@
         .range([height, 0]);
 
       // X axis
-      svg.append("g")
+      const xAxis = svg.append("g")
         .attr("transform", `translate(0,${height})`)
-        .call(d3.axisBottom(x))
-        .selectAll("text")
+        .call(d3.axisBottom(x));
+
+      xAxis.selectAll("text")
         .attr("transform", "rotate(-45)")
         .style("text-anchor", "end")
-        .style("font-size", "12px");
+        .style("font-size", "12px")
+        .call(wrap, x.bandwidth());
 
       // Y axis
       svg.append("g")
@@ -120,7 +154,7 @@
         .on("mouseover", handleMouseOver)
         .on("mouseout", handleMouseOut);
 
-      // Labels
+      // Labels on bars
       svg.selectAll(".label")
         .data(trafficData)
         .enter()
@@ -132,9 +166,7 @@
         .text(d => d.total_incidentes);
 
       function handleMouseOver(event, d) {
-        const infoBox = d3.select(".intersection-info");
         const matching = intersectionsData.find(i => i.cruce === d.Crucero);
-
         if (matching) {
           d3.select("#intersection-name").text(matching.cruce);
           d3.select("#total-incidents").text("Total Incidents: " + matching.incidents);
