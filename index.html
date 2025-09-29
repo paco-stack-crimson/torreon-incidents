@@ -1,109 +1,159 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
   <title>Torreón Incidents</title>
-  <!-- Load Montserrat font -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Montserrat font -->
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
-  <script src="https://d3js.org/d3.v7.min.js"></script>
   <style>
     body {
       font-family: 'Montserrat', sans-serif;
       margin: 0;
+      background: #f9f9f9;
+      color: #333;
+    }
+    h1 {
+      text-align: center;
+      margin: 20px 0;
+    }
+    .container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
       padding: 20px;
     }
     #chart {
+      flex: 2;
+      min-width: 600px;
+    }
+    .info-panel {
+      flex: 1;
+      min-width: 300px;
+      background: #fff;
+      padding: 15px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      border-radius: 8px;
+    }
+    .info-panel h2 {
+      font-size: 18px;
+      margin-top: 0;
+    }
+    #street-view iframe {
       width: 100%;
-      max-width: 960px;
-      margin: auto;
-    }
-    .bar {
-      fill: steelblue;
-    }
-    .bar:hover {
-      fill: #4a8c75;
+      height: 250px;
+      border: 0;
     }
     .label {
       fill: #333;
-      font-size: 12px;
-      font-family: 'Montserrat', sans-serif;
-    }
-    .axis text {
-      font-size: 12px;
-      font-family: 'Montserrat', sans-serif;
+      font-size: 10px;
     }
   </style>
 </head>
 <body>
-  <h1>Torreón Incidents</h1>
-  <div id="chart"></div>
+  <h1>Incidentes en Cruceros de Torreón</h1>
 
+  <div class="container">
+    <div id="chart"></div>
+    <div class="info-panel">
+      <h2 id="intersection-name">Pasa el ratón sobre una barra</h2>
+      <p id="total-incidents"></p>
+      <p id="semaforizado-status"></p>
+      <div id="street-view"></div>
+    </div>
+  </div>
+
+  <!-- D3 -->
+  <script src="https://d3js.org/d3.v7.min.js"></script>
   <script>
-    d3.csv("https://paco-stack-crimson.github.io/torreon-incidents/incidentes.csv").then(data => {
-      data.forEach(d => {
+    const margin = {top: 20, right: 20, bottom: 220, left: 50};
+    const width = 800 - margin.left - margin.right;
+    const height = 500 - margin.top - margin.bottom;
+
+    const svg = d3.select("#chart")
+      .append("svg")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+      .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    Promise.all([
+      d3.csv("incidentes.csv"),
+      d3.json("datos.json")
+    ]).then(function(files) {
+
+      const trafficData = files[0];
+      const intersectionsData = files[1].intersections;
+
+      trafficData.forEach(d => {
         d.total_incidentes = +d.total_incidentes || 0;
       });
-      // Sort descending
-      data.sort((a, b) => b.total_incidentes - a.total_incidentes);
 
-      const margin = { top: 20, right: 20, bottom: 30, left: 250 };
-      const width = 960 - margin.left - margin.right;
-      const barHeight = 25;
-      const height = data.length * barHeight;
+      const x = d3.scaleBand()
+        .domain(trafficData.map(d => d.Crucero))
+        .range([0, width])
+        .padding(0.2);
 
-      const svg = d3.select("#chart")
-        .append("svg")
-        .attr("width", width + margin.left + margin.right)
-        .attr("height", height + margin.top + margin.bottom)
-        .append("g")
-        .attr("transform", `translate(${margin.left},${margin.top})`);
+      const y = d3.scaleLinear()
+        .domain([0, d3.max(trafficData, d => d.total_incidentes)])
+        .range([height, 0])
+        .nice();
 
-      const x = d3.scaleLinear()
-        .domain([0, d3.max(data, d => d.total_incidentes)])
-        .range([0, width]);
-
-      const y = d3.scaleBand()
-        .domain(data.map(d => d.Crucero))
-        .range([0, height])
-        .padding(0.1);
-
-      // Bars
-      svg.selectAll(".bar")
-        .data(data)
-        .enter()
-        .append("rect")
-        .attr("class", "bar")
-        .attr("y", d => y(d.Crucero))
-        .attr("height", y.bandwidth())
-        .attr("x", 0)
-        .attr("width", d => x(d.total_incidentes));
-
-      // Labels on left axis
-      svg.append("g")
-        .call(d3.axisLeft(y))
-        .selectAll("text")
-        .style("font-size", "12px")
-        .style("font-family", "Montserrat");
-
-      // X axis at bottom
       svg.append("g")
         .attr("transform", `translate(0,${height})`)
-        .call(d3.axisBottom(x).ticks(5))
+        .call(d3.axisBottom(x))
         .selectAll("text")
-        .style("font-family", "Montserrat");
+        .attr("transform", "rotate(-65)")
+        .style("text-anchor", "end")
+        .style("font-size", "10px");
 
-      // Numeric labels at end of bars
+      svg.append("g")
+        .call(d3.axisLeft(y));
+
+      svg.selectAll("rect")
+        .data(trafficData)
+        .enter()
+        .append("rect")
+        .attr("x", d => x(d.Crucero))
+        .attr("y", d => y(d.total_incidentes))
+        .attr("width", x.bandwidth())
+        .attr("height", d => height - y(d.total_incidentes))
+        .attr("fill", "#69b3a2")
+        .on("mouseover", handleMouseOver);
+
       svg.selectAll(".label")
-        .data(data)
+        .data(trafficData)
         .enter()
         .append("text")
         .attr("class", "label")
-        .attr("x", d => x(d.total_incidentes) + 5)
-        .attr("y", d => y(d.Crucero) + y.bandwidth()/2 + 4)
+        .attr("x", d => x(d.Crucero) + x.bandwidth() / 2)
+        .attr("y", d => y(d.total_incidentes) - 5)
+        .attr("text-anchor", "middle")
         .text(d => d.total_incidentes);
-    }).catch(err => {
-      console.error("Failed to load or draw:", err);
+
+      function handleMouseOver(event, d) {
+        const infoBox = d3.select(".info-panel");
+        const match = intersectionsData.find(i => i.cruce === d.Crucero);
+
+        if (match) {
+          d3.select("#intersection-name").text(match.cruce);
+          d3.select("#total-incidents").text("Total de Incidentes: " + match.incidents);
+          d3.select("#semaforizado-status").text("Semaforizado: " + match.semaforizado);
+
+          const lat = match.latitude;
+          const lng = match.longitude;
+          // 👇 Replace with your real API key:
+          const embedUrl = `https://www.google.com/maps/embed/v1/streetview?key=YOUR_API_KEY&location=${lat},${lng}&heading=210&pitch=10&fov=80`;
+
+          d3.select("#street-view").html(`
+            <iframe 
+              loading="lazy" 
+              allowfullscreen 
+              src="${embedUrl}">
+            </iframe>
+          `);
+        }
+      }
     });
   </script>
 </body>
