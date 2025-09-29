@@ -85,18 +85,10 @@ const margin = { top: 20, right: 20, bottom: 180, left: 60 };
 let width, height;
 
 function renderChart() {
-  // Remove previous SVG if exists
   d3.select("#chart").selectAll("*").remove();
 
-  width = Math.max(container.clientWidth, 1500) - margin.left - margin.right; // ensure wide enough
+  const containerWidth = container.clientWidth;
   height = 450 - margin.top - margin.bottom;
-
-  const svg = d3.select("#chart")
-    .append("svg")
-    .attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom)
-    .append("g")
-    .attr("transform", `translate(${margin.left},${margin.top})`);
 
   Promise.all([
     d3.csv("https://paco-stack-crimson.github.io/torreon-incidents/incidentes.csv"),
@@ -107,9 +99,20 @@ function renderChart() {
 
     trafficData.forEach(d => d.total_incidentes = +d.total_incidentes || 0);
 
+    // Determine bar width
+    const barWidth = Math.max(40, containerWidth / trafficData.length - 5); 
+    const chartWidth = Math.max(containerWidth, trafficData.length * (barWidth + 5));
+
+    const svg = d3.select("#chart")
+      .append("svg")
+      .attr("width", chartWidth + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+      .attr("transform", `translate(${margin.left},${margin.top})`);
+
     const x = d3.scaleBand()
       .domain(trafficData.map(d => d.Crucero))
-      .range([0, trafficData.length * 50]) // wider for many bars
+      .range([0, chartWidth])
       .padding(0.2);
 
     const y = d3.scaleLinear()
@@ -178,7 +181,7 @@ function renderChart() {
 // Initial render
 renderChart();
 
-// Re-render on window resize for responsiveness
+// Re-render on window resize
 window.addEventListener("resize", renderChart);
 </script>
 
