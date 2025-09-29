@@ -112,4 +112,137 @@
       <h3 id="info-cruce">Hover over a bar</h3>
       <p><strong>Total de Incidentes:</strong> <span id="info-incidents">—</span></p>
       <p><strong>Semaforizado:</strong> <span id="info-semaforizado">—</span></p>
-      <p id="info-streetview
+      <p id="info-streetview"><a href="#" target="_blank">Street View</a></p>
+    </div>
+  </div>
+
+  <script>
+    const margin = { top: 20, right: 20, bottom: 80, left: 200 };
+    const width = 700 - margin.left - margin.right;
+    const height = 500 - margin.top - margin.bottom;
+
+    const svg = d3
+      .select("#chart")
+      .append("svg")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+      .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    Promise.all([
+      d3.csv("https://paco-stack-crimson.github.io/torreon-incidents/incidentes.csv"),
+      d3.json("https://paco-stack-crimson.github.io/torreon-incidents/datos.json"),
+    ]).then(([csv, json]) => {
+      csv.forEach(d => (d.total_incidentes = +d.total_incidentes || 0));
+      const lookup = {};
+      json.intersections.forEach(i => {
+        lookup[i.cruce] = i;
+      });
+
+      const data = csv.map(d => {
+        const extra = lookup[d.Crucero] || {};
+        return {
+          cruce: d.Crucero,
+          total_incidentes: d.total_incidentes,
+          semaforizado: extra.semaforizado || "N/A",
+          latitude: extra.latitude,
+          longitude: extra.longitude,
+          streetView: extra.streetView || "#",
+        };
+      });
+
+      // Sort descending
+      data.sort((a, b) => b.total_incidentes - a.total_incidentes);
+
+      const x = d3
+        .scaleLinear()
+        .domain([0, d3.max(data, d => d.total_incidentes)])
+        .range([0, width]);
+
+      const y = d3
+        .scaleBand()
+        .domain(data.map(d => d.cruce))
+        .range([0, height])
+        .padding(0.1);
+
+      svg
+        .append("g")
+        .call(d3.axisLeft(y))
+        .selectAll("text")
+        .style("font-size", "12px");
+
+      svg
+        .append("g")
+        .attr("transform", `translate(0,${height})`)
+        .call(d3.axisBottom(x))
+        .selectAll("text")
+        .attr("transform", "rotate(-45)")
+        .style("text-anchor", "end");
+
+      const bars = svg
+        .selectAll(".bar")
+        .data(data)
+        .enter()
+        .append("rect")
+        .attr("class", "bar")
+        .attr("y", d => y(d.cruce))
+        .attr("height", y.bandwidth())
+        .attr("x", 0)
+        .attr("width", d => x(d.total_incidentes))
+        .on("mouseover", onHover)
+        .on("mouseout", onOut)
+        .on("click", onClick);
+
+      // Leaflet map
+      const map = L.map("map").setView([25.55, -103.4], 12);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: "&copy; OpenStreetMap contributors",
+      }).addTo(map);
+
+      const cluster = L.markerClusterGroup();
+      const markers = {};
+
+      data.forEach(d => {
+        if (d.latitude != null && d.longitude != null) {
+          const marker = L.marker([d.latitude, d.longitude]).bindPopup(`
+            <strong>${d.cruce}</strong><br>
+            Incidentes: ${d.total_incidentes}<br>
+            Semaforizado: ${d.semaforizado}<br>
+            <a href="${d.streetView}" target="_blank">Street View</a>
+          `);
+          cluster.addLayer(marker);
+          markers[d.cruce] = marker;
+        }
+      });
+      map.addLayer(cluster);
+
+      function onHover(event, d) {
+        // highlight bar
+        d3.select(this).attr("fill", "#4a8c75");
+
+        // update info panel
+        d3.select("#info-cruce").text(d.cruce);
+        d3.select("#info-incidents").text(d.total_incidentes);
+        d3.select("#info-semaforizado").text(d.semaforizado);
+        d3.select("#info-streetview a").attr("href", d.streetView);
+
+        // pan map and open popup
+        const m = markers[d.cruce];
+        if (m) {
+          map.flyTo(m.getLatLng(), 14, { duration: 0.6 });
+          m.openPopup();
+        }
+      }
+
+      function onOut(event, d) {
+        d3.select(this).attr("fill", "#69b3a2");
+      }
+
+      function onClick(event, d) {
+        window.open(d.streetView, "_blank");
+      }
+    });
+  </script>
+</body>
+</html>
