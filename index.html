@@ -82,25 +82,27 @@ function renderChart() {
     ]).then(([trafficData, intersectionsData]) => {
         
         // --- DATA CLEANING AND MAPPING ---
-        // Filter out bad data and convert the correct column to number
         const INCIDENTS_KEY = "TOTAL DE INCIDENTES"; // This MUST match your CSV column header
         
         trafficData = trafficData.filter(d => d.Crucero && d[INCIDENTS_KEY] !== undefined);
         trafficData.forEach(d => d[INCIDENTS_KEY] = +d[INCIDENTS_KEY]);
 
         // --- CHART SETUP ---
-        const margin = {top:20,right:20,bottom:180,left:60};
+        // CHANGED: margin.bottom to 200
+        const margin = {top:20,right:20,bottom:200,left:60}; 
         const containerWidth = document.getElementById("chart-container").clientWidth;
-        const height = 450 - margin.top - margin.bottom;
+        
+        // CHANGED: total chart height to 600
+        const totalChartHeight = 600; 
+        const height = totalChartHeight - margin.top - margin.bottom;
 
         const minBarWidth = 35;
-        // Calculate dynamic width based on the number of data points
         const chartWidth = Math.max(containerWidth - margin.left - margin.right, trafficData.length * minBarWidth);
 
         const svg = d3.select("#chart-container")
           .append("svg")
           .attr("width", chartWidth + margin.left + margin.right)
-          .attr("height", height + margin.top + margin.bottom)
+          .attr("height", totalChartHeight) // Use the full height here
           .append("g")
           .attr("transform", `translate(${margin.left},${margin.top})`);
 
@@ -149,7 +151,7 @@ function renderChart() {
             .on("mouseover", (event,d)=>{
               const match = intersectionsData.find(i=>i.cruce===d.Crucero);
               if(match){
-                // Use latitude/longitude from your data for the Street View API call
+                // Street View API call
                 const streetViewUrl = `https://maps.googleapis.com/maps/api/streetview?size=300x200&location=${match.latitude},${match.longitude}&key=${API_KEY}`;
                 
                 // Create and position the tooltip
