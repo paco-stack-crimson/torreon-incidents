@@ -1,13 +1,6 @@
-const margin = {top: 20, right: 20, bottom: 200, left: 40};
-const width = 960 - margin.left - margin.right;
+const margin = { top: 20, right: 20, bottom: 200, left: 40 };
+const barWidth = 40;
 const height = 500 - margin.top - margin.bottom;
-
-const svg = d3.select("#chart")
-  .append("svg")
-    .attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom)
-  .append("g")
-    .attr("transform", `translate(${margin.left},${margin.top})`);
 
 Promise.all([
   d3.csv("https://paco-stack-crimson.github.io/torreon-incidents/incidentes.csv"),
@@ -17,13 +10,11 @@ Promise.all([
   const csvData = files[0];
   const jsonData = files[1].intersections;
 
-  // Build lookup from JSON by cruce string
   const jsonLookup = {};
   jsonData.forEach(i => {
     jsonLookup[i.cruce] = i;
   });
 
-  // Merge CSV + JSON rows
   const mergedData = csvData.map(d => {
     d.total_incidentes = +d.total_incidentes || 0;
     const extra = jsonLookup[d.Crucero] || {};
@@ -37,13 +28,20 @@ Promise.all([
     };
   });
 
-  // D3 X axis
+  const width = barWidth * mergedData.length;
+
+  const svg = d3.select("#chart")
+    .append("svg")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+      .attr("transform", `translate(${margin.left},${margin.top})`);
+
   const x = d3.scaleBand()
     .domain(mergedData.map(d => d.Crucero))
     .range([0, width])
     .padding(0.1);
 
-  // D3 Y axis
   const y = d3.scaleLinear()
     .domain([0, d3.max(mergedData, d => d.total_incidentes)])
     .range([height, 0])
@@ -54,9 +52,12 @@ Promise.all([
     .call(d3.axisBottom(x))
     .selectAll("text")
       .attr("transform", "rotate(-65)")
-      .style("text-anchor", "end");
+      .style("text-anchor", "end")
+      .style("font-size", "10px");
 
   svg.append("g").call(d3.axisLeft(y));
+
+  const tooltip = d3.select("#tooltip");
 
   // Bars
   svg.selectAll("rect")
@@ -69,10 +70,10 @@ Promise.all([
       .attr("width", x.bandwidth())
       .attr("height", d => height - y(d.total_incidentes))
       .attr("fill", "#69b3a2")
+      .on("mousemove", handleMouseMove)
       .on("mouseover", handleMouseOver)
       .on("mouseout", handleMouseOut);
 
-  // Labels
   svg.selectAll(".label")
     .data(mergedData)
     .enter()
@@ -81,7 +82,7 @@ Promise.all([
       .attr("x", d => x(d.Crucero) + x.bandwidth() / 2)
       .attr("y", d => y(d.total_incidentes) - 5)
       .attr("text-anchor", "middle")
-      .style("font-size", "12px")
+      .style("font-size", "10px")
       .text(d => d.total_incidentes);
 
   // Leaflet map
@@ -91,7 +92,6 @@ Promise.all([
     attribution: '&copy; OpenStreetMap contributors'
   }).addTo(map);
 
-  // Markers + keep references
   const markers = {};
   mergedData.forEach(d => {
     if (d.latitude && d.longitude) {
@@ -106,17 +106,15 @@ Promise.all([
     }
   });
 
-  // Hover handlers
   function handleMouseOver(event, d) {
-    d3.select("#intersection-name").text(d.Crucero);
-    d3.select("#total-incidents").text("Total de Incidentes: " + d.total_incidentes);
-    d3.select("#semaforizado-status").text("Semaforizado: " + d.semaforizado);
-
-    if (d.streetView) {
-      d3.select("#street-view").html(
-        `<iframe src="${d.streetView}" width="100%" height="300" style="border:0;" allowfullscreen></iframe>`
-      );
-    }
+    tooltip
+      .style("opacity", 1)
+      .html(`
+        <strong>${d.Crucero}</strong><br/>
+        Incidentes: ${d.total_incidentes}<br/>
+        Semaforizado: ${d.semaforizado || "N/D"}<br/>
+        ${d.streetView ? `<a href="${d.streetView}" target="_blank">Street View</a>` : ''}
+      `);
 
     if (markers[d.Crucero]) {
       markers[d.Crucero].openPopup();
@@ -124,8 +122,14 @@ Promise.all([
     }
   }
 
+  function handleMouseMove(event, d) {
+    tooltip
+      .style("left", (event.offsetX + 15) + "px")
+      .style("top", (event.offsetY - 30) + "px");
+  }
+
   function handleMouseOut(event, d) {
-    // optional clear
+    tooltip.style("opacity", 0);
   }
 
 }).catch(function(error) {
