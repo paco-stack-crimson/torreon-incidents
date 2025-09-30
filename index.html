@@ -82,7 +82,7 @@ function renderChart() {
     ]).then(([trafficData, intersectionsData]) => {
         
         // --- DATA CLEANING AND MAPPING ---
-        const INCIDENTS_KEY = "TOTAL DE INCIDENTES"; // This MUST match your CSV column header
+        const INCIDENTS_KEY = "total_incidentes"; // This MUST match your CSV column header
         
         trafficData = trafficData.filter(d => d.Crucero && d[INCIDENTS_KEY] !== undefined);
         trafficData.forEach(d => d[INCIDENTS_KEY] = +d[INCIDENTS_KEY]);
