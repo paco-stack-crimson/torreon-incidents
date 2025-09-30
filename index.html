@@ -1,176 +1,35 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
-<meta charset="UTF-8">
-<title>CRUCES MÁS CONFLICTIVOS DE TORREÓN 2018-2025</title>
-<meta name="viewport" content="width=1260">
-<script src="https://d3js.org/d3.v7.min.js"></script>
-<style>
-body { 
-    font-family: Arial, sans-serif; 
-    margin:0; 
-    padding:20px; 
-    background:#f4f4f4; 
-    color:#333; 
-    text-align:center;
-}
-h1 { 
-    color:#004d99; 
-    font-size:2.5em; 
-    border-bottom:2px solid #ccc; 
-    padding-bottom:10px; 
-}
-#chart-container { 
-    width:90%; 
-    max-width:1200px;
-    margin:20px auto; 
-    overflow-x:auto; 
-    background:#fff; 
-    padding:20px; 
-    border-radius:12px; 
-    box-shadow:0 4px 12px rgba(0,0,0,0.1);
-}
-svg { 
-    display:block; 
-}
-.bar { 
-    fill:#004d99; 
-    cursor:pointer; 
-    transition: fill 0.2s;
-}
-.bar:hover { 
-    fill:#ff6347; 
-}
-.tooltip {
-    position:absolute;
-    background:#fff;
-    padding:10px;
-    border:1px solid #ccc;
-    border-radius:5px;
-    box-shadow:0 2px 8px rgba(0,0,0,0.2);
-    pointer-events: none;
-    z-index: 1000;
-}
-.tooltip img {
-    max-width: 300px;
-    height: auto;
-    display: block;
-    margin-top: 5px;
-}
-.x-axis text, .y-axis text { 
-    font-size:12px; 
-}
-</style>
+  <meta charset="UTF-8">
+  <title>Incidentes en Cruceros - Torreón</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://d3js.org/d3.v7.min.js"></script>
 </head>
 <body>
+  <h2>Incidentes en Cruceros de Torreón</h2>
 
-<h1>CRUCES MÁS CONFLICTIVOS DE TORREÓN 2018-2025</h1>
-<div id="chart-container"></div>
+  <div id="graph-container">
+    <!-- Graph -->
+    <div id="chart"></div>
 
-<script>
-function renderChart() {
-    d3.select("#chart-container").selectAll("*").remove();
-    
-    Promise.all([
-      d3.csv("https://paco-stack-crimson.github.io/torreon-incidents/Incidentes.csv"),
-      d3.json("https://paco-stack-crimson.github.io/torreon-incidents/datos.json")
-    ]).then(([trafficData, json]) => {
-        
-        const intersectionsData = json.intersections;
-        const INCIDENTS_KEY = "total_incidentes";  // <-- fixed key
+    <!-- Info panel -->
+    <div id="info-panel">
+      <h3>Detalles</h3>
+      <p><strong>Totales:</strong> <span id="info-totales">-</span></p>
+      <p><strong>Semaforizado:</strong> <span id="info-semaforo">-</span></p>
+      <div id="street-view-container">
+        <iframe id="street-view-frame"
+                width="100%"
+                height="200"
+                frameborder="0"
+                style="border-radius: 8px;"
+                allowfullscreen>
+        </iframe>
+      </div>
+    </div>
+  </div>
 
-        trafficData = trafficData.filter(d => d.Crucero && d[INCIDENTS_KEY] !== undefined);
-        trafficData.forEach(d => d[INCIDENTS_KEY] = +d[INCIDENTS_KEY]);
-
-        const margin = {top:20,right:20,bottom:200,left:60}; 
-        const containerWidth = document.getElementById("chart-container").clientWidth;
-        const totalChartHeight = 600; 
-        const height = totalChartHeight - margin.top - margin.bottom;
-
-        const minBarWidth = 35;
-        const chartWidth = Math.max(containerWidth - margin.left - margin.right, trafficData.length * minBarWidth);
-
-        const svg = d3.select("#chart-container")
-          .append("svg")
-          .attr("width", chartWidth + margin.left + margin.right)
-          .attr("height", totalChartHeight)
-          .append("g")
-          .attr("transform", `translate(${margin.left},${margin.top})`);
-
-        const x = d3.scaleBand()
-          .domain(trafficData.map(d=>d.Crucero))
-          .range([0, chartWidth])
-          .padding(0.2);
-
-        const y = d3.scaleLinear()
-          .domain([0, d3.max(trafficData, d => d[INCIDENTS_KEY])]).nice()
-          .range([height,0]);
-
-        svg.append("g")
-          .attr("class", "x-axis")
-          .attr("transform", `translate(0,${height})`)
-          .call(d3.axisBottom(x))
-          .selectAll("text")
-            .attr("transform","rotate(-60)")
-            .style("text-anchor","end");
-
-        svg.append("g")
-            .attr("class", "y-axis")
-            .call(d3.axisLeft(y));
-            
-        svg.append("text")
-            .attr("transform", "rotate(-90)")
-            .attr("y", 0 - margin.left)
-            .attr("x", 0 - (height / 2))
-            .attr("dy", "1em")
-            .style("text-anchor", "middle")
-            .text("Total de Incidentes");
-
-        svg.selectAll(".bar")
-          .data(trafficData)
-          .enter()
-          .append("rect")
-            .attr("class","bar")
-            .attr("x", d=>x(d.Crucero))
-            .attr("y", d=>y(d[INCIDENTS_KEY]))
-            .attr("width", x.bandwidth())
-            .attr("height", d=>height - y(d[INCIDENTS_KEY]))
-            .on("mouseover", (event,d)=>{
-              const match = intersectionsData.find(i=>i.cruce === d.Crucero);
-              if(match){
-                const tooltip = d3.select("body").append("div")
-                  .attr("class","tooltip")
-                  .style("left", (event.pageX + 15) + "px")
-                  .style("top", (event.pageY - 15) + "px");
-
-                tooltip.html(`
-                  <h3 style="margin: 0; font-size:1.1em; color:#004d99;">${match.cruce}</h3>
-                  <p style="margin: 5px 0 0 0;">Total de Incidentes: <strong>${match.incidents}</strong></p>
-                  <p style="margin: 0 0 5px 0;">Semaforizado: <strong>${match.semaforizado}</strong></p>
-                  <img src="${match.streetView}" alt="Street View Preview">
-                `);
-              }
-            })
-            .on("mouseout", ()=>d3.selectAll(".tooltip").remove());
-
-        svg.selectAll(".label")
-          .data(trafficData)
-          .enter()
-          .append("text")
-            .attr("x", d=>x(d.Crucero)+x.bandwidth()/2)
-            .attr("y", d=>y(d[INCIDENTS_KEY])-5)
-            .attr("text-anchor","middle")
-            .style("font-size", "10px")
-            .text(d=>d[INCIDENTS_KEY]);
-    }).catch(function(error) {
-        console.error("Error loading data. Check filenames and GitHub file paths.", error);
-        d3.select("#chart-container").html("<p style='color:red;'>Error loading data. Check the console for details.</p>");
-    });
-}
-
-renderChart();
-window.addEventListener("resize", renderChart);
-</script>
-
+  <script src="script.js"></script>
 </body>
 </html>
