@@ -6,7 +6,6 @@
 <meta name="viewport" content="width=1260">
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <style>
-/* Simplified CSS for single-file operation */
 body { 
     font-family: Arial, sans-serif; 
     margin:0; 
@@ -49,7 +48,7 @@ svg {
     border:1px solid #ccc;
     border-radius:5px;
     box-shadow:0 2px 8px rgba(0,0,0,0.2);
-    pointer-events: none; /* Allows mouse events to pass through */
+    pointer-events: none;
     z-index: 1000;
 }
 .tooltip img {
@@ -69,30 +68,22 @@ svg {
 <div id="chart-container"></div>
 
 <script>
-const API_KEY = "YOUR_API_KEY"; // REPLACE WITH YOUR GOOGLE MAPS API KEY
-
 function renderChart() {
-    // Clear the container before redrawing (for responsiveness)
     d3.select("#chart-container").selectAll("*").remove();
     
-    // NOTE: The paths below use the full URL to solve your 404 issue.
     Promise.all([
-      d3.csv("https://paco-stack-crimson.github.io/torreon-incidents/incidentes.csv"),
+      d3.csv("https://paco-stack-crimson.github.io/torreon-incidents/Incidentes.csv"),
       d3.json("https://paco-stack-crimson.github.io/torreon-incidents/datos.json")
-    ]).then(([trafficData, intersectionsData]) => {
+    ]).then(([trafficData, json]) => {
         
-        // --- DATA CLEANING AND MAPPING ---
-        const INCIDENTS_KEY = "total_incidentes"; // This MUST match your CSV column header
-        
+        const intersectionsData = json.intersections;
+        const INCIDENTS_KEY = "total_incidentes";  // <-- fixed key
+
         trafficData = trafficData.filter(d => d.Crucero && d[INCIDENTS_KEY] !== undefined);
         trafficData.forEach(d => d[INCIDENTS_KEY] = +d[INCIDENTS_KEY]);
 
-        // --- CHART SETUP ---
-        // CHANGED: margin.bottom to 200
         const margin = {top:20,right:20,bottom:200,left:60}; 
         const containerWidth = document.getElementById("chart-container").clientWidth;
-        
-        // CHANGED: total chart height to 600
         const totalChartHeight = 600; 
         const height = totalChartHeight - margin.top - margin.bottom;
 
@@ -102,11 +93,10 @@ function renderChart() {
         const svg = d3.select("#chart-container")
           .append("svg")
           .attr("width", chartWidth + margin.left + margin.right)
-          .attr("height", totalChartHeight) // Use the full height here
+          .attr("height", totalChartHeight)
           .append("g")
           .attr("transform", `translate(${margin.left},${margin.top})`);
 
-        // --- SCALES ---
         const x = d3.scaleBand()
           .domain(trafficData.map(d=>d.Crucero))
           .range([0, chartWidth])
@@ -116,7 +106,6 @@ function renderChart() {
           .domain([0, d3.max(trafficData, d => d[INCIDENTS_KEY])]).nice()
           .range([height,0]);
 
-        // --- AXES ---
         svg.append("g")
           .attr("class", "x-axis")
           .attr("transform", `translate(0,${height})`)
@@ -129,7 +118,6 @@ function renderChart() {
             .attr("class", "y-axis")
             .call(d3.axisLeft(y));
             
-        // Add Y-axis label
         svg.append("text")
             .attr("transform", "rotate(-90)")
             .attr("y", 0 - margin.left)
@@ -138,7 +126,6 @@ function renderChart() {
             .style("text-anchor", "middle")
             .text("Total de Incidentes");
 
-        // --- BARS and INTERACTIVITY ---
         svg.selectAll(".bar")
           .data(trafficData)
           .enter()
@@ -149,28 +136,23 @@ function renderChart() {
             .attr("width", x.bandwidth())
             .attr("height", d=>height - y(d[INCIDENTS_KEY]))
             .on("mouseover", (event,d)=>{
-              const match = intersectionsData.find(i=>i.cruce===d.Crucero);
+              const match = intersectionsData.find(i=>i.cruce === d.Crucero);
               if(match){
-                // Street View API call
-                const streetViewUrl = `https://maps.googleapis.com/maps/api/streetview?size=300x200&location=${match.latitude},${match.longitude}&key=${API_KEY}`;
-                
-                // Create and position the tooltip
                 const tooltip = d3.select("body").append("div")
                   .attr("class","tooltip")
-                  .style("left", (event.pageX + 15) + "px") // Offset from cursor
+                  .style("left", (event.pageX + 15) + "px")
                   .style("top", (event.pageY - 15) + "px");
 
                 tooltip.html(`
                   <h3 style="margin: 0; font-size:1.1em; color:#004d99;">${match.cruce}</h3>
                   <p style="margin: 5px 0 0 0;">Total de Incidentes: <strong>${match.incidents}</strong></p>
                   <p style="margin: 0 0 5px 0;">Semaforizado: <strong>${match.semaforizado}</strong></p>
-                  <img src="${streetViewUrl}" alt="Street View Preview">
+                  <img src="${match.streetView}" alt="Street View Preview">
                 `);
               }
             })
             .on("mouseout", ()=>d3.selectAll(".tooltip").remove());
 
-        // --- DATA LABELS (on top of bars) ---
         svg.selectAll(".label")
           .data(trafficData)
           .enter()
@@ -186,7 +168,6 @@ function renderChart() {
     });
 }
 
-// Initial render and resize listener
 renderChart();
 window.addEventListener("resize", renderChart);
 </script>
