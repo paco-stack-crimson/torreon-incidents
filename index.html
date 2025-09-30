@@ -77,7 +77,7 @@ function renderChart() {
     
     // NOTE: The paths below use the full URL to solve your 404 issue.
     Promise.all([
-      d3.csv("https://paco-stack-crimson.github.io/torreon-incidents/Incidentes.csv"),
+      d3.csv("https://paco-stack-crimson.github.io/torreon-incidents/incidentes.csv"),
       d3.json("https://paco-stack-crimson.github.io/torreon-incidents/datos.json")
     ]).then(([trafficData, intersectionsData]) => {
         
