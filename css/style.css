@@ -38,7 +38,7 @@ h1 {
 #info-panel {
     flex: 1;
     padding-left: 20px;
-    margin-top: 20px;       /* Slight downward adjustment */
+    margin-top: 40px;       /* Slight downward adjustment */
     align-self: flex-start;  /* Ensures margin-top is applied in flex layout */
     font-size: 0.9em;
     line-height: 1.4em;
