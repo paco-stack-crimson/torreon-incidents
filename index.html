@@ -1,176 +1,181 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Incidentes en Cruceros - Torreón</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <script src="https://d3js.org/d3.v7.min.js"></script>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 20px;
-      background: #f4f4f4;
-      color: #333;
-    }
-    h1 {
-      text-align: center;
-      color: #004d99;
-      margin-bottom: 20px;
-    }
-    .layout {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 20px;
-    }
-    #chart-container {
-      background: #fff;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      flex: 1 1 65%;
-      min-width: 600px;
-    }
-    #info-container {
-      background: #fff;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      flex: 1 1 25%;
-      min-width: 250px;
-      max-width: 350px;
-    }
-    #info-container h2 {
-      margin-top: 0;
-      font-size: 1.2em;
-      color: #004d99;
-    }
-    #info-container p {
-      margin: 8px 0;
-    }
-    .bar {
-      fill: #004d99;
-      cursor: pointer;
-      transition: fill 0.2s;
-    }
-    .bar:hover {
-      fill: #ff6347;
-    }
-    .x-axis text, .y-axis text {
-      font-size: 11px;
-    }
-  </style>
+<meta charset="UTF-8">
+<title>CRUCES MÁS CONFLICTIVOS DE TORREÓN 2018-2025</title>
+<meta name="viewport" content="width=1260">
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<style>
+body { 
+    font-family: Arial, sans-serif; 
+    margin:0; 
+    padding:20px; 
+    background:#f4f4f4; 
+    color:#333; 
+    text-align:center;
+}
+h1 { 
+    color:#004d99; 
+    font-size:2.5em; 
+    border-bottom:2px solid #ccc; 
+    padding-bottom:10px; 
+}
+#chart-container { 
+    width:90%; 
+    max-width:1200px;
+    margin:20px auto; 
+    overflow-x:auto; 
+    background:#fff; 
+    padding:20px; 
+    border-radius:12px; 
+    box-shadow:0 4px 12px rgba(0,0,0,0.1);
+}
+svg { display:block; }
+.bar { 
+    fill:#004d99; 
+    cursor:pointer; 
+    transition: fill 0.2s;
+}
+.bar:hover { fill:#ff6347; }
+.panel {
+    display:inline-block;
+    vertical-align:top;
+    text-align:left;
+    margin-left:20px;
+    width:250px;
+}
+.panel h3 { margin:0 0 5px 0; color:#004d99; }
+.panel p { margin:3px 0; }
+</style>
 </head>
 <body>
-  <h1>Cruceros Más Conflictivos de Torreón (2018–2025)</h1>
-  <div class="layout">
+
+<h1>CRUCES MÁS CONFLICTIVOS DE TORREÓN 2018-2025</h1>
+<div style="display:flex; justify-content:center;">
     <div id="chart-container"></div>
-    <div id="info-container">
-      <h2>Información</h2>
-      <p><strong>Crucero:</strong> <span id="info-crucero">—</span></p>
-      <p><strong>Total Incidentes:</strong> <span id="info-total">—</span></p>
-      <p><strong>Semaforizado:</strong> <span id="info-semaforo">—</span></p>
+    <div class="panel">
+        <h3 id="hover-crucero">Crucero</h3>
+        <p id="hover-total">Total: </p>
+        <p id="hover-semaforizado">Semaforizado: </p>
     </div>
+</div>
+
+<!-- Map + Street View row -->
+<div id="map-streetview-row" style="display:flex; gap:20px; margin-top:20px; justify-content:center;">
+  <!-- Google Map -->
+  <div id="map-container" style="flex:1; height:400px;">
+    <iframe
+      id="google-map"
+      width="100%"
+      height="100%"
+      frameborder="0"
+      style="border:0;"
+      allowfullscreen
+      src="https://www.google.com/maps/embed/v1/view?key=YOUR_API_KEY&center=25.5428443,-103.4067861&zoom=14">
+    </iframe>
   </div>
 
-  <script>
-    function renderChart() {
-      // Clear chart
-      d3.select("#chart-container").selectAll("*").remove();
+  <!-- Google Street View -->
+  <div id="streetview-container" style="flex:1; height:400px;">
+    <iframe
+      id="google-streetview"
+      width="100%"
+      height="100%"
+      frameborder="0"
+      style="border:0;"
+      allowfullscreen
+      src="https://www.google.com/maps/embed/v1/streetview?key=YOUR_API_KEY&location=25.5428443,-103.4067861">
+    </iframe>
+  </div>
+</div>
 
-      Promise.all([
-        d3.csv("https://paco-stack-crimson.github.io/torreon-incidents/incidentes.csv"),
-        d3.json("https://paco-stack-crimson.github.io/torreon-incidents/datos.json")
-      ]).then(([csvData, jsonData]) => {
-        const intersections = jsonData.intersections || [];
+<script>
+const API_KEY = "YOUR_API_KEY"; // Google Maps API Key
 
-        // Normalize CSV
-        csvData.forEach(d => {
-          d.total_incidentes = +d.total_incidentes || 0;
-        });
+function renderChart() {
+    d3.select("#chart-container").selectAll("*").remove();
 
-        // Merge CSV + JSON (by Crucero name)
-        const lookup = {};
-        intersections.forEach(d => lookup[d.cruce] = d);
+    Promise.all([
+      d3.csv("incidentes.csv"),
+      d3.json("datos.json")
+    ]).then(([trafficData, intersectionsData]) => {
 
-        const merged = csvData.map(d => {
-          const extra = lookup[d.Crucero] || {};
-          return {
-            Crucero: d.Crucero,
-            total_incidentes: d.total_incidentes,
-            semaforizado: extra.semaforizado || "—"
-          };
-        });
+        const INCIDENTS_KEY = "total_incidentes"; // CSV column
 
-        // Chart setup
-        const margin = {top: 20, right: 20, bottom: 50, left: 60};
+        trafficData = trafficData.filter(d => d.Crucero && d[INCIDENTS_KEY] !== undefined);
+        trafficData.forEach(d => d[INCIDENTS_KEY] = +d[INCIDENTS_KEY]);
+
+        const margin = {top:20,right:20,bottom:60,left:60};
         const containerWidth = document.getElementById("chart-container").clientWidth;
-        const totalHeight = 400;
-        const width = containerWidth - margin.left - margin.right;
-        const height = totalHeight - margin.top - margin.bottom;
+        const totalChartHeight = 500;
+        const height = totalChartHeight - margin.top - margin.bottom;
+
+        const minBarWidth = 35;
+        const chartWidth = Math.max(containerWidth - margin.left - margin.right, trafficData.length * minBarWidth);
 
         const svg = d3.select("#chart-container")
           .append("svg")
-          .attr("width", containerWidth)
-          .attr("height", totalHeight)
+          .attr("width", chartWidth + margin.left + margin.right)
+          .attr("height", totalChartHeight)
           .append("g")
           .attr("transform", `translate(${margin.left},${margin.top})`);
 
+        // SCALES
         const x = d3.scaleBand()
-          .domain(merged.map(d => d.Crucero))
-          .range([0, width])
+          .domain(trafficData.map(d=>d.Crucero))
+          .range([0, chartWidth])
           .padding(0.2);
 
         const y = d3.scaleLinear()
-          .domain([0, d3.max(merged, d => d.total_incidentes)]).nice()
-          .range([height, 0]);
+          .domain([0, d3.max(trafficData, d => d[INCIDENTS_KEY])]).nice()
+          .range([height,0]);
 
-        // Axes
-        svg.append("g")
-          .attr("class", "x-axis")
-          .attr("transform", `translate(0,${height})`)
-          .call(d3.axisBottom(x).tickFormat(() => "")); // hide text ticks
-
+        // AXES
         svg.append("g")
           .attr("class", "y-axis")
           .call(d3.axisLeft(y));
 
-        // Bars
+        svg.append("text")
+            .attr("transform", "rotate(-90)")
+            .attr("y", 0 - margin.left)
+            .attr("x", 0 - (height / 2))
+            .attr("dy", "1em")
+            .style("text-anchor", "middle")
+            .text("Total de Incidentes");
+
+        // BARS
         svg.selectAll(".bar")
-          .data(merged)
+          .data(trafficData)
           .enter()
           .append("rect")
-          .attr("class", "bar")
-          .attr("x", d => x(d.Crucero))
-          .attr("y", d => y(d.total_incidentes))
-          .attr("width", x.bandwidth())
-          .attr("height", d => height - y(d.total_incidentes))
-          .on("mouseover", (event,d) => {
-            d3.select("#info-crucero").text(d.Crucero);
-            d3.select("#info-total").text(d.total_incidentes);
-            d3.select("#info-semaforo").text(d.semaforizado);
-          });
+            .attr("class","bar")
+            .attr("x", d=>x(d.Crucero))
+            .attr("y", d=>y(d[INCIDENTS_KEY]))
+            .attr("width", x.bandwidth())
+            .attr("height", d=>height - y(d[INCIDENTS_KEY]))
+            .on("mouseover", (event,d)=>{
+                const match = intersectionsData.find(i=>i.cruce===d.Crucero);
+                if(match){
+                    document.getElementById("hover-crucero").textContent = match.cruce;
+                    document.getElementById("hover-total").textContent = "Total: " + match.incidents;
+                    document.getElementById("hover-semaforizado").textContent = "Semaforizado: " + match.semaforizado;
 
-        // Labels on bars
-        svg.selectAll(".label")
-          .data(merged)
-          .enter()
-          .append("text")
-          .attr("class", "label")
-          .attr("x", d => x(d.Crucero) + x.bandwidth()/2)
-          .attr("y", d => y(d.total_incidentes) - 5)
-          .attr("text-anchor","middle")
-          .style("font-size","10px")
-          .text(d => d.total_incidentes);
-      }).catch(err => {
-        console.error("Error loading data", err);
-        d3.select("#chart-container").html("<p style='color:red;'>Error al cargar datos</p>");
-      });
-    }
+                    const streetViewUrl = `https://www.google.com/maps/embed/v1/streetview?key=${API_KEY}&location=${match.latitude},${match.longitude}`;
+                    document.getElementById("google-streetview").src = streetViewUrl;
 
-    renderChart();
-    window.addEventListener("resize", renderChart);
-  </script>
+                    const mapUrl = `https://www.google.com/maps/embed/v1/view?key=${API_KEY}&center=${match.latitude},${match.longitude}&zoom=14`;
+                    document.getElementById("google-map").src = mapUrl;
+                }
+            });
+    }).catch(function(error) {
+        console.error("Error cargando los datos:", error);
+        d3.select("#chart-container").html("<p style='color:red;'>Error cargando los datos. Revisa la consola.</p>");
+    });
+}
+
+renderChart();
+window.addEventListener("resize", renderChart);
+</script>
+
 </body>
 </html>
