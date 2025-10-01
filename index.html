@@ -3,150 +3,163 @@
 <head>
 <meta charset="UTF-8">
 <title>CRUCES MÁS CONFLICTIVOS DE TORREÓN 2018-2025</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <style>
-/* --- Chart & Panel Styles --- */
-body { font-family: Arial, sans-serif; margin:0; padding:20px; background:#f4f4f4; color:#333; }
-h1 { color:#004d99; font-size:2.5em; border-bottom:2px solid #ccc; padding-bottom:10px; text-align:center; }
-#chart-panel-container { display:flex; justify-content:center; gap:20px; margin-top:20px; }
-#chart-container { flex:1; max-width:800px; background:#fff; padding:20px; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.1); }
-#info-panel { width:200px; background:#fff; padding:15px; border-radius:10px; box-shadow:0 4px 12px rgba(0,0,0,0.1); font-size:0.9em; }
+body { font-family: Arial, sans-serif; margin:0; padding:20px; background:#f4f4f4; color:#333; text-align:center; }
+h1 { color:#004d99; font-size:2.5em; border-bottom:2px solid #ccc; padding-bottom:10px; }
+#chart-container { width:90%; max-width:1200px; margin:20px auto; overflow-x:auto; background:#fff; padding:20px; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.1); }
+svg { display:block; }
 .bar { fill:#004d99; cursor:pointer; transition: fill 0.2s; }
 .bar:hover { fill:#ff6347; }
-#map-streetview-row { display:flex; gap:20px; margin-top:20px; justify-content:center; }
-#map, #streetview { flex:1; height:400px; border-radius:10px; }
+.tooltip { position:absolute; background:#fff; padding:10px; border:1px solid #ccc; border-radius:5px; box-shadow:0 2px 8px rgba(0,0,0,0.2); pointer-events:none; z-index:1000; }
+.tooltip img { max-width:300px; height:auto; display:block; margin-top:5px; }
+.panel { width:300px; padding:10px; border-radius:10px; background:#fff; box-shadow:0 4px 12px rgba(0,0,0,0.1); margin-left:20px; text-align:left; }
+#main-row { display:flex; justify-content:center; align-items:flex-start; gap:20px; }
+#map-streetview-row { display:flex; justify-content:center; gap:20px; margin-top:20px; }
+#map-container, #streetview-container { flex:1; height:400px; }
 </style>
 </head>
 <body>
 
 <h1>CRUCES MÁS CONFLICTIVOS DE TORREÓN 2018-2025</h1>
 
-<!-- Chart + Info Panel -->
-<div id="chart-panel-container">
+<!-- Chart + Panel -->
+<div id="main-row">
   <div id="chart-container"></div>
-  <div id="info-panel">
-    <h3>Información</h3>
-    <p id="panel-cruce">Cruce: -</p>
-    <p id="panel-total">Totales: -</p>
-    <p id="panel-semaforizado">Semaforizado: -</p>
+  <div class="panel" id="info-panel">
+    <p><strong>Crucero:</strong> <span id="intersection-name">Hover a bar</span></p>
+    <p><strong>Total de Incidentes:</strong> <span id="total-incidents">-</span></p>
+    <p><strong>Semaforizado:</strong> <span id="semaforizado-status">-</span></p>
   </div>
 </div>
 
-<!-- Google Maps + Street View -->
+<!-- Maps + Street View -->
 <div id="map-streetview-row">
-  <div id="map"></div>
-  <div id="streetview"></div>
+  <div id="map-container"></div>
+  <div id="streetview-container"></div>
 </div>
 
 <script>
-let map, streetView;
+const API_KEY = "AIzaSyDf8skGR8RqBL3eVy1i8Euk6S424fvEsco"; // <-- replace with your key
 
-// --- INIT GOOGLE MAPS ---
-function initMap() {
-  map = new google.maps.Map(document.getElementById('map'), {
-    center: { lat: 25.55, lng: -103.4 },
-    zoom: 12
-  });
-
-  streetView = new google.maps.StreetViewPanorama(
-    document.getElementById('streetview'),
-    { position: { lat: 25.55, lng: -103.4 }, pov: { heading: 0, pitch: 0 }, zoom: 1 }
-  );
-
-  map.setStreetView(streetView);
-
-  renderChart(); // call chart rendering
-}
-
-// --- D3 CHART ---
+// D3 Chart
 function renderChart() {
-  const margin = {top:20,right:20,bottom:40,left:60};
-  const width = 800 - margin.left - margin.right;
-  const height = 400 - margin.top - margin.bottom;
-
-  const svg = d3.select("#chart-container").selectAll("*").remove();
-  const svg2 = d3.select("#chart-container")
-    .append("svg")
-    .attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom)
-    .append("g")
-    .attr("transform", `translate(${margin.left},${margin.top})`);
+  d3.select("#chart-container").selectAll("*").remove();
 
   Promise.all([
     d3.csv("https://paco-stack-crimson.github.io/torreon-incidents/incidentes.csv"),
     d3.json("https://paco-stack-crimson.github.io/torreon-incidents/datos.json")
   ]).then(([csvData, jsonData]) => {
-
+    // Merge CSV + JSON
     const jsonLookup = {};
-    jsonData.intersections.forEach(d => { jsonLookup[d.cruce] = d; });
+    jsonData.intersections.forEach(i => jsonLookup[i.cruce] = i);
 
     const mergedData = csvData.map(d => {
       const extra = jsonLookup[d.Crucero] || {};
       return {
         Crucero: d.Crucero,
         total_incidentes: +d.total_incidentes || extra.incidents || 0,
-        semaforizado: extra.semaforizado || "No",
-        latitude: extra.latitude || 25.55,
-        longitude: extra.longitude || -103.4,
-        streetView: extra.streetView || ""
+        semaforizado: extra.semaforizado || "",
+        latitude: extra.latitude || null,
+        longitude: extra.longitude || null
       };
     });
 
+    // Chart dimensions
+    const margin = {top:20,right:20,bottom:20,left:60};
+    const containerWidth = document.getElementById("chart-container").clientWidth;
+    const totalChartHeight = 400;
+    const height = totalChartHeight - margin.top - margin.bottom;
+    const minBarWidth = 30;
+    const chartWidth = Math.max(containerWidth - margin.left - margin.right, mergedData.length * minBarWidth);
+
+    const svg = d3.select("#chart-container")
+      .append("svg")
+      .attr("width", chartWidth + margin.left + margin.right)
+      .attr("height", totalChartHeight)
+      .append("g")
+      .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    // Scales
     const x = d3.scaleBand()
-      .domain(mergedData.map(d=>d.Crucero))
-      .range([0,width])
+      .domain(mergedData.map(d => d.Crucero))
+      .range([0, chartWidth])
       .padding(0.2);
 
     const y = d3.scaleLinear()
-      .domain([0,d3.max(mergedData,d=>d.total_incidentes)]).nice()
+      .domain([0, d3.max(mergedData, d => d.total_incidentes)]).nice()
       .range([height,0]);
 
-    svg2.append("g")
-      .attr("transform",`translate(0,${height})`)
+    // Axes (no labels at bottom)
+    svg.append("g")
+      .attr("transform", `translate(0,${height})`)
       .call(d3.axisBottom(x).tickFormat(""));
 
-    svg2.append("g")
-      .call(d3.axisLeft(y));
+    svg.append("g").call(d3.axisLeft(y));
 
-    svg2.selectAll(".bar")
+    // Bars + hover
+    svg.selectAll(".bar")
       .data(mergedData)
       .enter()
       .append("rect")
       .attr("class","bar")
-      .attr("x",d=>x(d.Crucero))
-      .attr("y",d=>y(d.total_incidentes))
-      .attr("width",x.bandwidth())
-      .attr("height",d=>height - y(d.total_incidentes))
-      .on("mouseover",(event,d)=>{
-        d3.select("#panel-cruce").text(`Cruce: ${d.Crucero}`);
-        d3.select("#panel-total").text(`Totales: ${d.total_incidentes}`);
-        d3.select("#panel-semaforizado").text(`Semaforizado: ${d.semaforizado}`);
+      .attr("x", d => x(d.Crucero))
+      .attr("y", d => y(d.total_incidentes))
+      .attr("width", x.bandwidth())
+      .attr("height", d => height - y(d.total_incidentes))
+      .on("mouseover", (event,d)=>{
+        d3.select("#intersection-name").text(d.Crucero);
+        d3.select("#total-incidents").text(d.total_incidentes);
+        d3.select("#semaforizado-status").text(d.semaforizado);
 
-        // Update Google Maps marker + center
-        const pos = {lat: +d.latitude, lng: +d.longitude};
-        map.setCenter(pos);
-        map.setZoom(15);
-        streetView.setPosition(pos);
+        if(d.latitude && d.longitude){
+          updateMaps(d.latitude, d.longitude);
+        }
       });
+    
+  }).catch(err => console.error("Error loading data:", err));
+}
 
-    // Optional: add labels on top
-    svg2.selectAll(".label")
-      .data(mergedData)
-      .enter()
-      .append("text")
-      .attr("x", d=>x(d.Crucero)+x.bandwidth()/2)
-      .attr("y", d=>y(d.total_incidentes)-5)
-      .attr("text-anchor","middle")
-      .style("font-size","10px")
-      .text(d=>d.total_incidentes);
-  }).catch(err => console.error("Error loading data", err));
+renderChart();
+window.addEventListener("resize", renderChart);
+
+// Google Maps + Street View
+let map, streetView;
+function initMaps() {
+  const center = {lat: 25.5428443, lng: -103.4067861};
+
+  map = new google.maps.Map(document.getElementById("map-container"), {
+    zoom: 12,
+    center: center
+  });
+
+  streetView = new google.maps.StreetViewPanorama(
+    document.getElementById("streetview-container"), {
+      position: center,
+      pov: {heading: 165, pitch: 0},
+      zoom: 1
+    }
+  );
+
+  map.setStreetView(streetView);
+}
+
+function updateMaps(lat, lng){
+  const pos = {lat:+lat, lng:+lng};
+  map.setCenter(pos);
+
+  new google.maps.Marker({
+    position: pos,
+    map: map
+  });
+
+  streetView.setPosition(pos);
 }
 </script>
 
-<!-- Google Maps API -->
 <script async
-src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDf8skGR8RqBL3eVy1i8Euk6S424fvEsco&callback=initMap">
+  src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMaps">
 </script>
 
 </body>
