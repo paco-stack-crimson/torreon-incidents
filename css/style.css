@@ -37,7 +37,7 @@ h1 {
 #info-panel {
     flex: 1;
     position: relative; /* allows top to work */
-    top: 50px;          /* move panel slightly downward */
+    top: 65px;          /* move panel slightly downward */
     font-size: 0.9em;
     line-height: 1.4em;
     background: #fff;
