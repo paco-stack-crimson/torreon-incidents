@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Incidentes en Cruceros - Torreón</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <style>
     body {
@@ -16,28 +16,38 @@
     h1 {
       text-align: center;
       color: #004d99;
+      margin-bottom: 20px;
     }
-    #container {
+    .layout {
       display: flex;
+      flex-wrap: wrap;
       justify-content: center;
-      align-items: flex-start;
       gap: 20px;
-      margin-top: 20px;
     }
-    #chart {
+    #chart-container {
       background: #fff;
       padding: 20px;
-      border-radius: 12px;
+      border-radius: 10px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      flex: 2;
+      flex: 1 1 65%;
+      min-width: 600px;
     }
-    #info-box {
+    #info-container {
       background: #fff;
       padding: 20px;
-      border-radius: 12px;
+      border-radius: 10px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      flex: 1;
+      flex: 1 1 25%;
       min-width: 250px;
+      max-width: 350px;
+    }
+    #info-container h2 {
+      margin-top: 0;
+      font-size: 1.2em;
+      color: #004d99;
+    }
+    #info-container p {
+      margin: 8px 0;
     }
     .bar {
       fill: #004d99;
@@ -53,89 +63,114 @@
   </style>
 </head>
 <body>
-
-<h1>CRUCES MÁS CONFLICTIVOS DE TORREÓN 2018-2025</h1>
-<div id="container">
-  <div id="chart"></div>
-  <div id="info-box">
-    <h2>Detalles</h2>
-    <p><strong>Crucero:</strong> <span id="info-crucero">—</span></p>
-    <p><strong>Total Incidentes:</strong> <span id="info-total">—</span></p>
-    <p><strong>Semaforizado:</strong> <span id="info-semaforo">—</span></p>
+  <h1>Cruceros Más Conflictivos de Torreón (2018–2025)</h1>
+  <div class="layout">
+    <div id="chart-container"></div>
+    <div id="info-container">
+      <h2>Información</h2>
+      <p><strong>Crucero:</strong> <span id="info-crucero">—</span></p>
+      <p><strong>Total Incidentes:</strong> <span id="info-total">—</span></p>
+      <p><strong>Semaforizado:</strong> <span id="info-semaforo">—</span></p>
+    </div>
   </div>
-</div>
 
-<script>
-Promise.all([
-  d3.csv("https://paco-stack-crimson.github.io/torreon-incidents/Incidentes.csv"),
-  d3.json("https://paco-stack-crimson.github.io/torreon-incidents/datos.json")
-]).then(([csvData, jsonData]) => {
+  <script>
+    function renderChart() {
+      // Clear chart
+      d3.select("#chart-container").selectAll("*").remove();
 
-  // --- PREPARE DATA ---
-  const lookup = {};
-  jsonData.intersections.forEach(d => { lookup[d.cruce] = d; });
+      Promise.all([
+        d3.csv("https://paco-stack-crimson.github.io/torreon-incidents/Incidentes.csv"),
+        d3.json("https://paco-stack-crimson.github.io/torreon-incidents/datos.json")
+      ]).then(([csvData, jsonData]) => {
+        const intersections = jsonData.intersections || [];
 
-  const data = csvData.map(d => {
-    const extra = lookup[d.Crucero] || {};
-    return {
-      crucero: d.Crucero,
-      total: +d.total_incidentes || +d["TOTAL DE INCIDENTES"] || 0,
-      semaforizado: d.semaforizado || extra.semaforizado || "No"
-    };
-  });
+        // Normalize CSV
+        csvData.forEach(d => {
+          d.total_incidentes = +d.total_incidentes || 0;
+        });
 
-  // --- CHART SETUP ---
-  const margin = {top: 20, right: 20, bottom: 50, left: 60};
-  const width = 600 - margin.left - margin.right;
-  const height = 400 - margin.top - margin.bottom;
+        // Merge CSV + JSON (by Crucero name)
+        const lookup = {};
+        intersections.forEach(d => lookup[d.cruce] = d);
 
-  const svg = d3.select("#chart")
-    .append("svg")
-    .attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom)
-    .append("g")
-    .attr("transform", `translate(${margin.left},${margin.top})`);
+        const merged = csvData.map(d => {
+          const extra = lookup[d.Crucero] || {};
+          return {
+            Crucero: d.Crucero,
+            total_incidentes: d.total_incidentes,
+            semaforizado: extra.semaforizado || "—"
+          };
+        });
 
-  const x = d3.scaleBand()
-    .domain(data.map(d => d.crucero))
-    .range([0, width])
-    .padding(0.2);
+        // Chart setup
+        const margin = {top: 20, right: 20, bottom: 50, left: 60};
+        const containerWidth = document.getElementById("chart-container").clientWidth;
+        const totalHeight = 400;
+        const width = containerWidth - margin.left - margin.right;
+        const height = totalHeight - margin.top - margin.bottom;
 
-  const y = d3.scaleLinear()
-    .domain([0, d3.max(data, d => d.total)]).nice()
-    .range([height, 0]);
+        const svg = d3.select("#chart-container")
+          .append("svg")
+          .attr("width", containerWidth)
+          .attr("height", totalHeight)
+          .append("g")
+          .attr("transform", `translate(${margin.left},${margin.top})`);
 
-  // Axes (without crucero labels to avoid clutter)
-  svg.append("g")
-    .attr("class", "x-axis")
-    .attr("transform", `translate(0,${height})`)
-    .call(d3.axisBottom(x).tickFormat("")) // hide labels
-    .selectAll("text").remove();
+        const x = d3.scaleBand()
+          .domain(merged.map(d => d.Crucero))
+          .range([0, width])
+          .padding(0.2);
 
-  svg.append("g")
-    .attr("class", "y-axis")
-    .call(d3.axisLeft(y));
+        const y = d3.scaleLinear()
+          .domain([0, d3.max(merged, d => d.total_incidentes)]).nice()
+          .range([height, 0]);
 
-  // Bars
-  svg.selectAll(".bar")
-    .data(data)
-    .enter().append("rect")
-    .attr("class", "bar")
-    .attr("x", d => x(d.crucero))
-    .attr("y", d => y(d.total))
-    .attr("width", x.bandwidth())
-    .attr("height", d => height - y(d.total))
-    .on("mouseover", (event, d) => {
-      d3.select("#info-crucero").text(d.crucero);
-      d3.select("#info-total").text(d.total);
-      d3.select("#info-semaforo").text(d.semaforizado);
-    });
+        // Axes
+        svg.append("g")
+          .attr("class", "x-axis")
+          .attr("transform", `translate(0,${height})`)
+          .call(d3.axisBottom(x).tickFormat(() => "")); // hide text ticks
 
-}).catch(err => {
-  console.error("Error cargando los datos:", err);
-  d3.select("#chart").html("<p style='color:red;'>Error al cargar los datos.</p>");
-});
-</script>
+        svg.append("g")
+          .attr("class", "y-axis")
+          .call(d3.axisLeft(y));
 
+        // Bars
+        svg.selectAll(".bar")
+          .data(merged)
+          .enter()
+          .append("rect")
+          .attr("class", "bar")
+          .attr("x", d => x(d.Crucero))
+          .attr("y", d => y(d.total_incidentes))
+          .attr("width", x.bandwidth())
+          .attr("height", d => height - y(d.total_incidentes))
+          .on("mouseover", (event,d) => {
+            d3.select("#info-crucero").text(d.Crucero);
+            d3.select("#info-total").text(d.total_incidentes);
+            d3.select("#info-semaforo").text(d.semaforizado);
+          });
+
+        // Labels on bars
+        svg.selectAll(".label")
+          .data(merged)
+          .enter()
+          .append("text")
+          .attr("class", "label")
+          .attr("x", d => x(d.Crucero) + x.bandwidth()/2)
+          .attr("y", d => y(d.total_incidentes) - 5)
+          .attr("text-anchor","middle")
+          .style("font-size","10px")
+          .text(d => d.total_incidentes);
+      }).catch(err => {
+        console.error("Error loading data", err);
+        d3.select("#chart-container").html("<p style='color:red;'>Error al cargar datos</p>");
+      });
+    }
+
+    renderChart();
+    window.addEventListener("resize", renderChart);
+  </script>
 </body>
 </html>
