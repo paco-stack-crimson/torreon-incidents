@@ -36,8 +36,7 @@ h1 {
 /* --- Info panel (next to chart) --- */
 #info-panel {
     flex: 1;
-    position: relative; /* allows top to work */
-    top: 65px;          /* move panel slightly downward */
+    margin-top: 50px; /* moves panel downward reliably */
     font-size: 0.9em;
     line-height: 1.4em;
     background: #fff;
