@@ -64,3 +64,113 @@ button {
     background: transparent;
     border: 0;
     padding: 0;
+    text-align: left;
+    cursor: pointer;
+    color: #2a2a2a;
+}
+button:focus {
+    outline: 0;
+}
+
+/* --- Chart container --- */
+#chart-container {
+    width: 90%;
+    max-width: 1200px;
+    margin: 20px auto;
+    overflow-x: auto;
+    background: #fff;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    display: flex;
+}
+svg {
+    display: block;
+}
+.bar {
+    fill: #004d99;
+    cursor: pointer;
+    transition: fill 0.2s;
+}
+.bar:hover {
+    fill: #ff6347;
+}
+
+/* --- Tooltip --- */
+.tooltip {
+    position: absolute;
+    background: #fff;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    pointer-events: none; /* mouse events pass through */
+    z-index: 1000;
+}
+.tooltip img {
+    max-width: 300px;
+    height: auto;
+    display: block;
+    margin-top: 5px;
+}
+
+/* --- Axes text --- */
+.x-axis text, .y-axis text {
+    font-size: 12px;
+}
+
+/* --- Info panel (next to chart) --- */
+#info-panel {
+    flex: 1;
+    padding-left: 20px;
+    padding-top: 15px; /* Slightly downward adjustment */
+    font-size: 0.9em;
+    line-height: 1.4em;
+}
+
+/* --- Map + Streetview containers --- */
+#map-streetview-row {
+    display: flex;
+    gap: 20px;
+    margin-top: 20px;
+    justify-content: center;
+}
+#map-container, #streetview-container {
+    flex: 1;
+    height: 400px;
+}
+iframe {
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
+
+/* --- Album info (if used) --- */
+.album-info {
+    display: flex;
+    margin-bottom: 5.5em;
+    font-size: 0.8em;
+}
+#album-title {
+    width: 80%;
+    padding-right: 10px;
+    height: 24px;
+}
+#album-year {
+    width: 20%;
+    text-align: right;
+}
+
+/* --- Track info (optional) --- */
+#track-title {
+    font-weight: 700;
+    margin-bottom: 0.5em;
+}
+#track-length {
+    margin-bottom: 0.5em;
+}
+
+/* --- Footer --- */
+footer {
+    margin: 2em 0;
+}
