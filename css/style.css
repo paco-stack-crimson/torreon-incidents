@@ -1,5 +1,5 @@
 body {
-  font-family: Arial, sans-serif;
+  font-family: Monserrat, Monserrat;
   margin: 20px;
   background: #f9f9f9;
 }
@@ -25,7 +25,7 @@ h2 {
   background: #fff;
   border: 1px solid #ccc;
   border-radius: 10px;
-  padding: 15px;
+  padding: 18px;
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
 }
 
