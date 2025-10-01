@@ -80,7 +80,7 @@
       d3.select("#chart-container").selectAll("*").remove();
 
       Promise.all([
-        d3.csv("https://paco-stack-crimson.github.io/torreon-incidents/Incidentes.csv"),
+        d3.csv("https://paco-stack-crimson.github.io/torreon-incidents/incidentes.csv"),
         d3.json("https://paco-stack-crimson.github.io/torreon-incidents/datos.json")
       ]).then(([csvData, jsonData]) => {
         const intersections = jsonData.intersections || [];
