@@ -6,134 +6,148 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <style>
-body { font-family: Arial, sans-serif; margin:0; padding:20px; background:#f4f4f4; color:#333; text-align:center; }
-h1 { color:#004d99; font-size:2.5em; border-bottom:2px solid #ccc; padding-bottom:10px; }
-#chart-panel-container { display:flex; justify-content:center; gap:20px; flex-wrap:wrap; margin-top:20px; }
-#chart-container { flex:2; min-width:400px; background:#fff; padding:20px; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.1); }
-#info-panel { flex:1; min-width:200px; background:#fff; padding:20px; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.1); text-align:left; }
+body { font-family: Arial, sans-serif; margin:0; padding:20px; background:#f4f4f4; color:#333; }
+h1 { color:#004d99; font-size:2.5em; border-bottom:2px solid #ccc; padding-bottom:10px; text-align:center; }
+#chart-container { display:flex; max-width:1200px; margin:20px auto; }
+#graph { flex:2; }
+#info-panel { flex:1; margin-left:20px; background:#fff; padding:15px; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.1); }
+#info-panel h2 { margin-top:0; font-size:1.2em; color:#004d99; }
+#map-streetview-row { display:flex; gap:20px; margin:20px auto; max-width:1200px; justify-content:center; }
+#map-container, #streetview-container { flex:1; min-width:300px; height:400px; border-radius:8px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.1); }
 .bar { fill:#004d99; cursor:pointer; transition: fill 0.2s; }
 .bar:hover { fill:#ff6347; }
-#map-streetview-row { display:flex; gap:20px; margin-top:20px; justify-content:center; flex-wrap:wrap; }
-#map-container, #streetview-container { flex:1; min-width:300px; height:400px; }
-iframe { width:100%; height:100%; border:0; }
+.axis text { font-size:12px; }
 </style>
 </head>
 <body>
 
 <h1>CRUCES MÁS CONFLICTIVOS DE TORREÓN 2018-2025</h1>
 
-<div id="chart-panel-container">
-  <div id="chart-container"></div>
+<div id="chart-container">
+  <div id="graph"></div>
   <div id="info-panel">
-    <h3 id="intersection-name">Hover over a bar</h3>
-    <p id="total-incidents">Total de Incidentes:</p>
-    <p id="semaforizado-status">Semaforizado:</p>
+    <h2 id="intersection-name">Selecciona un crucero</h2>
+    <p id="total-incidents">Total de incidentes: -</p>
+    <p id="semaforizado-status">Semaforizado: -</p>
   </div>
 </div>
 
-<!-- Map + Street View row -->
+<!-- Map + Street View -->
 <div id="map-streetview-row">
-  <div id="map-container">
-    <iframe
-      id="google-map"
-      allowfullscreen
-      src="https://www.google.com/maps/embed/v1/view?key=YOUR_API_KEY&center=25.5428443,-103.4067861&zoom=12">
-    </iframe>
-  </div>
-
+  <div id="map-container"></div>
   <div id="streetview-container">
-    <iframe
-      id="google-streetview"
-      allowfullscreen
-      src="https://www.google.com/maps/embed/v1/streetview?key=YOUR_API_KEY&location=25.5428443,-103.4067861">
-    </iframe>
+    <iframe id="google-streetview" width="100%" height="100%" frameborder="0" style="border:0;" allowfullscreen src=""></iframe>
   </div>
 </div>
 
+<script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY"></script>
 <script>
-const API_KEY = "AIzaSyDf8skGR8RqBL3eVy1i8Euk6S424fvEsco"; // Replace with your Google Maps API key
+const API_KEY = "AIzaSyDf8skGR8RqBL3eVy1i8Euk6S424fvEsco"; // Replace with your actual Google Maps API Key
 
-function renderChart() {
-  d3.select("#chart-container").selectAll("*").remove();
+// Initialize Google Map
+let map;
+function initMap(intersections) {
+  map = new google.maps.Map(document.getElementById("map-container"), {
+    center: {lat: 25.5428443, lng: -103.4067861},
+    zoom: 12
+  });
 
-  Promise.all([
-    d3.csv("https://paco-stack-crimson.github.io/torreon-incidents/Incidentes.csv"),
-    d3.json("https://paco-stack-crimson.github.io/torreon-incidents/datos.json")
-  ]).then(([trafficData, intersectionsData]) => {
-
-    const INCIDENTS_KEY = "total_incidentes";
-
-    trafficData = trafficData.filter(d => d.Crucero && d[INCIDENTS_KEY] !== undefined);
-    trafficData.forEach(d => d[INCIDENTS_KEY] = +d[INCIDENTS_KEY]);
-
-    const margin = {top:20,right:20,bottom:50,left:60};
-    const containerWidth = document.getElementById("chart-container").clientWidth;
-    const totalChartHeight = 400;
-    const height = totalChartHeight - margin.top - margin.bottom;
-    const minBarWidth = 35;
-    const chartWidth = Math.max(containerWidth - margin.left - margin.right, trafficData.length * minBarWidth);
-
-    const svg = d3.select("#chart-container")
-      .append("svg")
-      .attr("width", chartWidth + margin.left + margin.right)
-      .attr("height", totalChartHeight)
-      .append("g")
-      .attr("transform", `translate(${margin.left},${margin.top})`);
-
-    const x = d3.scaleBand()
-      .domain(trafficData.map(d=>d.Crucero))
-      .range([0, chartWidth])
-      .padding(0.2);
-
-    const y = d3.scaleLinear()
-      .domain([0, d3.max(trafficData, d => d[INCIDENTS_KEY])]).nice()
-      .range([height,0]);
-
-    // Draw y-axis
-    svg.append("g").call(d3.axisLeft(y));
-
-    // Remove x-axis (no labels at bottom)
-    svg.append("g")
-      .attr("transform", `translate(0,${height})`)
-      .call(d3.axisBottom(x).tickFormat(''))
-      .selectAll(".domain").remove(); // remove axis line
-
-    // Bars
-    svg.selectAll(".bar")
-      .data(trafficData)
-      .enter()
-      .append("rect")
-      .attr("class","bar")
-      .attr("x", d=>x(d.Crucero))
-      .attr("y", d=>y(d[INCIDENTS_KEY]))
-      .attr("width", x.bandwidth())
-      .attr("height", d=>height - y(d[INCIDENTS_KEY]))
-      .on("mouseover", (event,d)=>{
-        const match = intersectionsData.intersections.find(i=>i.cruce===d.Crucero);
-        if(match){
-          // Update info panel
-          d3.select("#intersection-name").text(match.cruce);
-          d3.select("#total-incidents").text("Total de Incidentes: " + match.incidents);
-          d3.select("#semaforizado-status").text("Semaforizado: " + match.semaforizado);
-
-          // Update Street View iframe
-          const streetViewUrl = `https://www.google.com/maps/embed/v1/streetview?key=${API_KEY}&location=${match.latitude},${match.longitude}`;
-          d3.select("#google-streetview").attr("src", streetViewUrl);
-
-          // Update Google Map iframe
-          const mapUrl = `https://www.google.com/maps/embed/v1/view?key=${API_KEY}&center=${match.latitude},${match.longitude}&zoom=14`;
-          d3.select("#google-map").attr("src", mapUrl);
-        }
+  intersections.forEach(i => {
+    if(i.latitude && i.longitude){
+      new google.maps.Marker({
+        position: {lat: i.latitude, lng: i.longitude},
+        map: map,
+        title: i.cruce
       });
-  }).catch(error=>{
-    console.error("Error loading data:", error);
-    d3.select("#chart-container").html("<p style='color:red;'>Error loading data. Check console.</p>");
+    }
   });
 }
 
-// Initial render and resize listener
-renderChart();
-window.addEventListener("resize", renderChart);
+// Load CSV + JSON and build chart
+Promise.all([
+  d3.csv("https://paco-stack-crimson.github.io/torreon-incidents/incidentes.csv"),
+  d3.json("https://paco-stack-crimson.github.io/torreon-incidents/datos.json")
+]).then(([csvData, jsonData]) => {
+
+  // Create lookup for JSON intersections
+  const intersectionsData = jsonData.intersections;
+  initMap(intersectionsData);
+
+  // Parse CSV and merge with JSON
+  const INCIDENTS_KEY = "total_incidentes"; // Make sure this matches your CSV header
+  csvData.forEach(d => d[INCIDENTS_KEY] = +d[INCIDENTS_KEY]);
+
+  // Chart dimensions
+  const margin = {top:20,right:20,bottom:20,left:60};
+  const containerWidth = document.getElementById("graph").clientWidth;
+  const height = 400 - margin.top - margin.bottom;
+  const width = containerWidth - margin.left - margin.right;
+
+  const svg = d3.select("#graph")
+    .append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform", `translate(${margin.left},${margin.top})`);
+
+  // Scales
+  const x = d3.scaleBand().domain(csvData.map(d=>d.Crucero)).range([0,width]).padding(0.2);
+  const y = d3.scaleLinear().domain([0,d3.max(csvData, d=>d[INCIDENTS_KEY])]).range([height,0]).nice();
+
+  // Remove x-axis (no Crucero names at bottom)
+  svg.append("g").call(d3.axisLeft(y));
+
+  // Y-axis label
+  svg.append("text")
+    .attr("transform","rotate(-90)")
+    .attr("y", 0 - margin.left)
+    .attr("x", 0 - (height/2))
+    .attr("dy","1em")
+    .style("text-anchor","middle")
+    .text("Total de Incidentes");
+
+  // Bars
+  svg.selectAll(".bar")
+    .data(csvData)
+    .enter()
+    .append("rect")
+    .attr("class","bar")
+    .attr("x", d=>x(d.Crucero))
+    .attr("y", d=>y(d[INCIDENTS_KEY]))
+    .attr("width", x.bandwidth())
+    .attr("height", d=>height - y(d[INCIDENTS_KEY]))
+    .on("mouseover",(event,d)=>{
+      const match = intersectionsData.find(i=>i.cruce===d.Crucero);
+      if(match){
+        d3.select("#intersection-name").text(match.cruce);
+        d3.select("#total-incidents").text("Total de Incidentes: " + match.incidents);
+        d3.select("#semaforizado-status").text("Semaforizado: " + match.semaforizado);
+
+        // Update Street View
+        const streetViewUrl = `https://www.google.com/maps/embed/v1/streetview?key=${API_KEY}&location=${match.latitude},${match.longitude}`;
+        d3.select("#google-streetview").attr("src", streetViewUrl);
+
+        // Center Google Map
+        map.setCenter({lat: match.latitude, lng: match.longitude});
+        map.setZoom(14);
+      }
+    });
+
+  // Optional: add data labels on top of bars
+  svg.selectAll(".label")
+    .data(csvData)
+    .enter()
+    .append("text")
+    .attr("x", d=>x(d.Crucero)+x.bandwidth()/2)
+    .attr("y", d=>y(d[INCIDENTS_KEY])-5)
+    .attr("text-anchor","middle")
+    .style("font-size","10px")
+    .text(d=>d[INCIDENTS_KEY]);
+
+}).catch(error=>{
+  console.error("Error loading data:", error);
+  d3.select("#graph").append("p").text("Error loading data. Check console.");
+});
 </script>
 
 </body>
