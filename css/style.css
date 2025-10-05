@@ -29,7 +29,6 @@ h1 {
     background: #fff;
     padding: 20px;
     border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     overflow-x: auto;
 }
 
@@ -39,7 +38,6 @@ h1 {
     background: #fff;
     padding: 20px;
     border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     font-size: 0.9em;
     line-height: 1.4em;
     position: relative; /* allows moving downward */
