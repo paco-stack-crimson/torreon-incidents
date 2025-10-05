@@ -18,7 +18,7 @@ h1 {
 /* --- Chart + Panel container --- */
 #chart-panel-container {
     display: flex;
-    justify-content: center;
+    justify-content: left;
     gap: 20px;
     margin-top: 20px; /* top margin for the whole container */
 }
